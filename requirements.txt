@@ -14,3 +14,7 @@ tvdatafeed @ git+https://github.com/rongardF/tvdatafeed.git@e6f6aaa7de439ac6e454
 tzdata==2025.2
 urllib3==2.5.0
 websocket-client==1.8.0
+gymnasium
+stable-baselines3
+torch
+scikit-learn

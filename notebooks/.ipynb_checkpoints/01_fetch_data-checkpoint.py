@@ -1,11 +1,8 @@
 from tvDatafeed import TvDatafeed, Interval
 import pandas as pd
 
-username = 'kwfoo'
-password = 'Vinandwen0613'
-
 try:
-    tv = TvDatafeed(username, password)
+    tv = TvDatafeed()
 
     # Fetch last 5000 bars of daily FCPO data from MYX exchange
     fcpo_data = tv.get_hist(symbol='FCPO1!', exchange='MYX', interval=Interval.in_daily, n_bars=5000)
