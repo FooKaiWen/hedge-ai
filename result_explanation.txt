@@ -1,0 +1,78 @@
+Thank you for sharing the new results. You've correctly identified that the outcome is not what we hoped for. Let's analyze what happened.
+
+  ### Analysis of New Results
+
+
+   1. Performance Collapse: The plot clearly shows that the agent is now consistently losing money. The portfolio value drops from over 999,000 to 
+      below 993,000. This is a much worse outcome than before.
+  By enabling State-Dependent Exploration (use_sde=True), we gave the agent a more powerful tool for exploration. However, it seems to have used 
+  that capability to explore and then incorrectly conclude that the safest (and therefore "best") strategy is to always hedge 100%.
+
+
+  Here’s why that’s a failing strategy:
+  *   By always hedging, the agent completely avoids market risk.
+  *   However, it is constantly paying transaction costs for maintaining the hedge.
+  *   This results in a "death by a thousand cuts," where the portfolio value slowly and consistently bleeds away due to costs, with zero chance 
+  of profiting from favorable market movements.
+
+
+  The fact that the entropy is still constant, combined with the agent choosing the exact same action every time, suggests that the training
+  process led the agent to become extremely confident in this single, flawed action.
+
+  ### Next Step: Investigate the Reward Function
+
+
+  This kind of failure is almost always rooted in the environment's reward function. The agent is doing exactly what it was rewarded for. Its 
+  current behavior suggests the reward signal is inadvertently punishing risk-taking so much that the agent prefers to lose a small, guaranteed 
+  amount of money on costs rather than risk a larger loss.
+
+
+  To fix this, we must investigate the heart of the learning process: the environment itself. I need to examine how the reward is calculated.
+
+
+  I will now read the environment file src/environment/hedge_env.py to understand the reward logic and identify why it's leading to this
+  undesirable behavior.
+ ╭───────────────────────────────────────────╮
+ │ ✓  ReadFile src\environment\hedge_env.py  │
+ ╰───────────────────────────────────────────╯
+✦ I've analyzed the environment code in src/environment/hedge_env.py and have located the precise reason for the agent's failed strategy.
+
+  ### The Problem: A Punitive Reward Function
+
+  The issue lies in these lines of code that calculate the reward:
+
+
+  `python
+          # ENHANCED REWARD: Penalize downside risk (Sortino-like)
+          if step_pnl < 0:
+              reward = step_pnl * (1 + self.downside_risk_aversion)
+          else:
+              reward = step_pnl
+  `
+
+
+  Your downside_risk_aversion parameter is set to 0.5. This means:
+  *   If the agent makes a profit (step_pnl > 0), its reward is step_pnl.
+     If the agent makes a loss (`step_pnl` < 0), its reward is `step_pnl  1.5`. The loss is magnified by 50%.
+
+
+  Faced with this asymmetric penalty, the agent made a "logical" choice to minimize its punishment. It learned that by hedging 100% of the time:
+  1.  It eliminates all market risk, avoiding the possibility of large, magnified losses.
+  2.  It accepts a small, guaranteed loss on every step due to transaction costs.
+
+
+  The agent chose a slow, predictable loss over a risky strategy where losses were punished far more heavily than gains were rewarded. It 
+  literally learned that the best way to succeed was to never try to win.
+
+  ### The Solution: Balance the Reward
+
+  The reward function must be balanced. The agent should be trying to maximize profit, not just avoid punishment. The simplest and most effective 
+  way to fix this is to remove the penalty and make the reward directly proportional to the profit or loss on each step.
+
+
+  I will modify the reward calculation to be simply:
+
+  reward = step_pnl
+
+  This change will treat gains and losses symmetrically, encouraging the agent to learn a genuine profit-seeking strategy instead of simply 
+  hiding from risk.

@@ -22,8 +22,13 @@ def create_profit_maximization_agent(env, log_dir="./logs/profit_max/"):
 
     # Vectorize the monitored env
     vec_env = DummyVecEnv([lambda: monitored_env])
+    
+    # Normalize the environment
+    vec_env = VecNormalize(vec_env, norm_obs=True, norm_reward=True)
 
-    model = PPO("MlpPolicy", vec_env, verbose=1, tensorboard_log=log_dir)
+    # old code
+    # model = PPO("MlpPolicy", vec_env, verbose=1, tensorboard_log=log_dir, use_sde=True)
+    model = PPO("MlpPolicy", vec_env, verbose=1, tensorboard_log=log_dir, use_sde=True, ent_coef=0.01)
     return model
 
 def create_risk_reduction_agent(env, log_dir="./logs/risk_reduction/"):
@@ -105,14 +110,14 @@ def train_and_evaluate():
         data=data,
         forecast_nextday_model=forecast_nextday_model,
         forecast_nextmonth_model=forecast_nextmonth_model,
-        start_date='2023-01-01',
-        end_date='2023-12-31'
+        start_date='2005-05-02',
+        end_date='2021-08-16'
     )
 
     # 3. Create and Train Agents
     print("--- Training Profit Maximization Agent ---")
     profit_agent = create_profit_maximization_agent(env)
-    profit_agent.learn(total_timesteps=10000)
+    profit_agent.learn(total_timesteps=100000)
     profit_agent.save("models/ppo_profit_maximization_agent")
     print("Profit Maximization Agent trained and saved.")
 

@@ -14,7 +14,8 @@ class HedgeEnv(gym.Env):
                  initial_cash=1_000_000,
                  lot_size=25,  # Metric tons per futures contract
                  transaction_cost_pct=0.001,
-                 max_episode_steps=90
+                 max_episode_steps=90,
+                 risk_aversion=0.01
                  ):
         super(HedgeEnv, self).__init__()
 
@@ -26,6 +27,7 @@ class HedgeEnv(gym.Env):
         self.initial_cash = initial_cash
         self.lot_size = lot_size
         self.transaction_cost_pct = transaction_cost_pct
+        self.risk_aversion = risk_aversion
 
         # Filter data for the simulation period
         self.simulation_data = self.data[
@@ -110,12 +112,12 @@ class HedgeEnv(gym.Env):
             min(self.current_step + 1, len(self.simulation_data) - 1)
         ]['close']
 
-        # Daily production
-        daily_cpo_production = 100
+        # Daily production (now stochastic for more realism)
+        daily_cpo_production = self.np_random.uniform(80, 120)
         self.cpo_inventory += daily_cpo_production
 
         # Futures adjustment
-        target_futures_contracts = (hedge_ratio * (self.cpo_inventory + daily_cpo_production)) / self.lot_size
+        target_futures_contracts = (hedge_ratio * self.cpo_inventory) / self.lot_size
         contracts_to_trade = target_futures_contracts - self.futures_positions
         transaction_cost = abs(contracts_to_trade) * self.lot_size * current_price * self.transaction_cost_pct
         self.cash -= transaction_cost
@@ -124,17 +126,19 @@ class HedgeEnv(gym.Env):
         # PnL
         spot_pnl = (next_price - current_price) * self.cpo_inventory
         futures_pnl = (current_price - next_price) * self.futures_positions * self.lot_size
-        step_pnl = spot_pnl + futures_pnl - transaction_cost
+        
+        # Introduce a small cost for holding a hedged position to discourage passivity
+        hedging_cost = self.futures_positions * self.lot_size * current_price * 0.00001 # 0.001% holding cost
 
+        step_pnl = spot_pnl + futures_pnl - transaction_cost - hedging_cost
+
+        # Store previous portfolio value to calculate reward
+        prev_portfolio_value = self.portfolio_value
         self.portfolio_value += step_pnl
-        self.cash += spot_pnl + futures_pnl
+        self.cash += spot_pnl + futures_pnl # Cash changes from PnL
 
-        # Sell inventory daily
-        self.cash += self.cpo_inventory * next_price
-        self.cpo_inventory = 0
-
-        reward = step_pnl 
-        # / max(self.portfolio_value, 1e-6)
+        # REWARD: The reward is the change in portfolio value
+        reward = self.portfolio_value - prev_portfolio_value
 
         # Advance step
         self.current_step += 1
@@ -143,6 +147,11 @@ class HedgeEnv(gym.Env):
         # Termination vs truncation
         terminated = self.current_step >= len(self.simulation_data) - 1
         truncated = self.episode_step_count >= self.max_episode_steps
+
+        if terminated:
+            print("--- Episode Terminated ---")
+        if truncated:
+            print("--- Episode Truncated (90-day limit reached) ---")
 
         obs = self._get_observation()
         info = self._get_info()
