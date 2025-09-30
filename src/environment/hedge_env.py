@@ -107,38 +107,49 @@ class HedgeEnv(gym.Env):
     def step(self, action):
         hedge_ratio = float(np.clip(action[0], 0.0, 1.0))
 
+        # Current and next day spot prices
         current_price = self.simulation_data.iloc[self.current_step]['close']
         next_price = self.simulation_data.iloc[
             min(self.current_step + 1, len(self.simulation_data) - 1)
         ]['close']
 
-        # Daily production (now stochastic for more realism)
-        daily_cpo_production = self.np_random.uniform(80, 120)
-        self.cpo_inventory += daily_cpo_production
+        # --- 1. Forecast 3-month production (90 days) ---
+        forecast_horizon = 90
+        forecast_daily = 100  # base forecast (tonnes/day), can be dynamic
+        expected_production = forecast_daily * forecast_horizon
 
-        # Futures adjustment
-        target_futures_contracts = (hedge_ratio * self.cpo_inventory) / self.lot_size
+        # --- 2. Hedge expected production with FCPO contracts ---
+        target_futures_contracts = (hedge_ratio * expected_production) / self.lot_size
         contracts_to_trade = target_futures_contracts - self.futures_positions
+
         transaction_cost = abs(contracts_to_trade) * self.lot_size * current_price * self.transaction_cost_pct
         self.cash -= transaction_cost
         self.futures_positions = target_futures_contracts
 
-        # PnL
-        spot_pnl = (next_price - current_price) * self.cpo_inventory
+        # --- 3. Daily production realization (stochastic) ---
+        daily_cpo_production = self.np_random.uniform(80, 120)
+
+        # Spot sales: all production sold same day
+        daily_sales = daily_cpo_production * current_price
+        self.cash += daily_sales
+
+        # --- 4. Futures mark-to-market PnL ---
+        # (in reality only realized at expiry, but FCPO is margin-settled daily)
         futures_pnl = (current_price - next_price) * self.futures_positions * self.lot_size
-        
-        # Introduce a small cost for holding a hedged position to discourage passivity
-        hedging_cost = self.futures_positions * self.lot_size * current_price * 0.00001 # 0.001% holding cost
+        self.cash += futures_pnl
 
-        step_pnl = spot_pnl + futures_pnl - transaction_cost - hedging_cost
+        # --- 5. Hedging cost (margin/holding penalty) ---
+        hedging_cost = self.futures_positions * self.lot_size * current_price * 0.00001
+        self.cash -= hedging_cost
 
-        # Store previous portfolio value to calculate reward
+        # --- 6. Portfolio update ---
         prev_portfolio_value = self.portfolio_value
-        self.portfolio_value += step_pnl
-        self.cash += spot_pnl + futures_pnl # Cash changes from PnL
+        self.portfolio_value = self.cash  # no big inventories anymore
 
-        # REWARD: The reward is the change in portfolio value
-        reward = self.portfolio_value - prev_portfolio_value
+        step_pnl = self.portfolio_value - prev_portfolio_value
+
+        # --- 7. Reward: portfolio growth (could change to variance-reduction metric) ---
+        reward = step_pnl
 
         # Advance step
         self.current_step += 1
