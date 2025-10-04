@@ -29,7 +29,7 @@ def run_evaluation(model, eval_env, save_results=True):
     results = []
 
     while not done:
-        action, _states = model.predict(obs, deterministic=True)
+        action, _states = model.predict(obs, deterministic=False)
         
         obs, reward, done, truncated, info = eval_env.step(action)
 
@@ -93,10 +93,10 @@ if __name__ == '__main__':
 
     # 2. Load and Separate Hyperparameters
     try:
-        with open("models/best_hyperparameters.pkl", "rb") as f:
+        with open("models/profit_maximization_best_hyperparameters.pkl.pkl", "rb") as f:
             best_hyperparameters = pickle.load(f)
     except FileNotFoundError:
-        print("Error: models/best_hyperparameters.pkl not found. Please run tune_agent.py first.")
+        print("Error: models/profit_maximization_best_hyperparameters.pkl.pkl not found. Please run tune_agent.py first.")
         sys.exit(1)
 
     # Separate environment params from PPO params
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         verbose=0,
         **ppo_hyperparameters
     )
-    model.learn(total_timesteps=500000) # Increased timesteps for final training
+    model.learn(total_timesteps=500) # Increased timesteps for final training
     print("--- Training Complete ---")
 
     # Save the trained model

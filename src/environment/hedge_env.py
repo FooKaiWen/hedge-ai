@@ -126,6 +126,15 @@ class HedgeEnv(gym.Env):
         self.cash -= transaction_cost
         self.futures_positions = target_futures_contracts
 
+        # --- 2b. Margin requirement check ---
+        margin_per_contract = 8000  # RM per FCPO contract (fixed for now)
+        margin_required = self.futures_positions * margin_per_contract
+        margin_penalty = 0.0
+        if margin_required > self.cash:
+            shortfall = margin_required - self.cash
+            margin_penalty = shortfall * 0.1  # tune factor as needed
+            self.cash -= margin_penalty  # deduct from cash to simulate liquidity strain
+
         # --- 3. Daily production realization (stochastic) ---
         daily_cpo_production = self.np_random.uniform(80, 120)
 
@@ -134,7 +143,6 @@ class HedgeEnv(gym.Env):
         self.cash += daily_sales
 
         # --- 4. Futures mark-to-market PnL ---
-        # (in reality only realized at expiry, but FCPO is margin-settled daily)
         futures_pnl = (current_price - next_price) * self.futures_positions * self.lot_size
         self.cash += futures_pnl
 
@@ -144,11 +152,10 @@ class HedgeEnv(gym.Env):
 
         # --- 6. Portfolio update ---
         prev_portfolio_value = self.portfolio_value
-        self.portfolio_value = self.cash  # no big inventories anymore
-
+        self.portfolio_value = self.cash  # no inventories, portfolio = cash
         step_pnl = self.portfolio_value - prev_portfolio_value
 
-        # --- 7. Reward: portfolio growth (could change to variance-reduction metric) ---
+        # --- 7. Reward: portfolio growth (with margin penalty already applied) ---
         reward = step_pnl
 
         # Advance step
@@ -170,7 +177,9 @@ class HedgeEnv(gym.Env):
             "step_pnl": step_pnl,
             "reward_unscaled": step_pnl,
             "hedge_ratio": hedge_ratio,
-            "futures_positions": self.futures_positions
+            "futures_positions": self.futures_positions,
+            "margin_required": margin_required,
+            "margin_penalty": margin_penalty
         })
 
         return obs, reward, terminated, truncated, info
