@@ -78,7 +78,7 @@ def main():
         forecast_nextmonth_model=forecast_nextmonth_model,
         start_date='2005-05-02',
         end_date='2021-08-16',
-        # reward_strategy=reward_strategy,
+        reward_strategy=reward_strategy,
         risk_aversion=risk_aversion
     )
     
@@ -119,7 +119,7 @@ def main():
         forecast_nextmonth_model=forecast_nextmonth_model,
         start_date='2021-08-17',
         end_date='2025-09-11',
-        # reward_strategy=reward_strategy,
+        reward_strategy=reward_strategy,
         risk_aversion=risk_aversion
     )
 

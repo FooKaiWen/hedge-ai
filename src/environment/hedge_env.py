@@ -15,7 +15,8 @@ class HedgeEnv(gym.Env):
                  lot_size=25,  # Metric tons per futures contract
                  transaction_cost_pct=0.001,
                  max_episode_steps=90,
-                 risk_aversion=0.01
+                 risk_aversion=0.01,
+                 reward_strategy='profit'
                  ):
         super(HedgeEnv, self).__init__()
 
@@ -28,6 +29,7 @@ class HedgeEnv(gym.Env):
         self.lot_size = lot_size
         self.transaction_cost_pct = transaction_cost_pct
         self.risk_aversion = risk_aversion
+        self.reward_strategy = reward_strategy
 
         # Filter data for the simulation period
         self.simulation_data = self.data[
@@ -155,8 +157,18 @@ class HedgeEnv(gym.Env):
         self.portfolio_value = self.cash  # no inventories, portfolio = cash
         step_pnl = self.portfolio_value - prev_portfolio_value
 
-        # --- 7. Reward: portfolio growth (with margin penalty already applied) ---
-        reward = step_pnl
+        # --- 7. Reward Calculation ---
+        if self.reward_strategy == 'profit':
+            reward = step_pnl
+        elif self.reward_strategy == 'sharpe':
+            # A simple risk-adjusted reward using a quadratic utility function
+            reward = step_pnl - self.risk_aversion * (step_pnl ** 2)
+        elif self.reward_strategy == 'cost':
+            # Minimize transaction, hedging, and margin penalty costs
+            total_costs = transaction_cost + hedging_cost + margin_penalty
+            reward = -total_costs
+        else:
+            raise ValueError(f"Unknown reward strategy: {self.reward_strategy}")
 
         # Advance step
         self.current_step += 1
