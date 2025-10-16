@@ -12,25 +12,146 @@ from datetime import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from src.environment.hedge_env import HedgeEnv
 
+def train_and_evaluate(agent_type, data, forecast_nextday_model, forecast_nextmonth_model, timesteps):
+    """
+    Train and evaluate one agent type (profit, risk, or cost).
+    Returns a tuple of (results_df, metrics_dict).
+    """
+    # Load best hyperparameters
+    hyperparams_path = f"models/{agent_type}_agent_best_hyperparameters.pkl"
+    try:
+        with open(hyperparams_path, "rb") as f:
+            best_hyperparameters = pickle.load(f)
+    except FileNotFoundError:
+        print(f"Error: Hyperparameter file not found at {hyperparams_path}.")
+        sys.exit(1)
+
+    risk_aversion = best_hyperparameters.pop('risk_aversion', 0.0)
+    ppo_hyperparameters = best_hyperparameters
+    ppo_hyperparameters.setdefault('max_grad_norm', 0.5)
+
+    print(f"\n--- Loaded Best Hyperparameters for {agent_type.title()} Agent ---")
+    for k, v in ppo_hyperparameters.items():
+        print(f"    {k}: {v}")
+
+    # Reward strategy mapping
+    reward_strategy_map = {'profit': 'profit', 'risk': 'sharpe', 'cost': 'cost'}
+    reward_strategy = reward_strategy_map[agent_type]
+    tensorboard_log_path = f"./tensorboard_logs/{agent_type}_agent/"
+
+    # --- Training Environment ---
+    train_env = HedgeEnv(
+        data=data,
+        forecast_nextday_model=forecast_nextday_model,
+        forecast_nextmonth_model=forecast_nextmonth_model,
+        start_date='2005-05-02',
+        end_date='2021-08-16',
+        reward_strategy=reward_strategy,
+        risk_aversion=risk_aversion
+    )
+
+    monitored_env = Monitor(train_env, tensorboard_log_path)
+    train_vec_env = DummyVecEnv([lambda: monitored_env])
+    train_vec_env = VecNormalize(train_vec_env, norm_obs=True, norm_reward=True)
+
+    model = PPO(
+        "MlpPolicy",
+        train_vec_env,
+        verbose=0,
+        tensorboard_log=tensorboard_log_path,
+        **ppo_hyperparameters
+    )
+
+    print(f"\n--- Training {agent_type.title()} Agent ---")
+    model.learn(total_timesteps=timesteps)
+    print("--- Training Complete ---")
+
+    dt_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    model_save_path = f"models/evaluated_{agent_type}_agent_{dt_str}.zip"
+    stats_path = os.path.join(tensorboard_log_path, "vec_normalize.pkl")
+    model.save(model_save_path)
+    train_vec_env.save(stats_path)
+
+    # --- Evaluation Environment ---
+    eval_env = HedgeEnv(
+        data=data,
+        forecast_nextday_model=forecast_nextday_model,
+        forecast_nextmonth_model=forecast_nextmonth_model,
+        start_date='2021-08-17',
+        end_date='2025-09-11',
+        reward_strategy=reward_strategy,
+        risk_aversion=risk_aversion
+    )
+
+    eval_vec_env = DummyVecEnv([lambda: Monitor(eval_env)])
+    eval_vec_env = VecNormalize.load(stats_path, eval_vec_env)
+    eval_vec_env.training = False
+    eval_vec_env.norm_reward = False
+
+    # --- Run Evaluation ---
+    print(f"\n--- Evaluating {agent_type.title()} Agent ---")
+    obs = eval_vec_env.reset()
+    done = False
+    results = []
+
+    while not done:
+        action, _states = model.predict(obs, deterministic=True)
+        obs, rewards, dones, infos = eval_vec_env.step(action)
+        done = dones[0]
+        info = infos[0]
+        results.append({
+            'timestep': info['current_step'],
+            'portfolio_value': info['portfolio_value'],
+            'hedge_ratio': float(action[0]),
+            'reward': rewards[0]
+        })
+
+    results_df = pd.DataFrame(results)
+    final_value = results_df['portfolio_value'].iloc[-1]
+    metrics = eval_env.compute_metrics()
+
+    print(f"--- Evaluation Complete for {agent_type.title()} ---")
+    print(f"Final Portfolio Value: {final_value:,.2f}")
+    print(f"Metrics: ROI={metrics['ROI']:.6f}, Sharpe={metrics['Sharpe Ratio']:.4f}, CostEff={metrics['Cost Efficiency Ratio']:.4f}")
+
+    # Save outputs
+    os.makedirs("outputs", exist_ok=True)
+    results_filename = f"outputs/{agent_type}_evaluation_results_{dt_str}.csv"
+    results_df.to_csv(results_filename, index=False)
+
+    # Plot performance
+    plt.figure(figsize=(10, 5))
+    plt.plot(results_df['timestep'], results_df['portfolio_value'])
+    plt.title(f"{agent_type.title()} Agent Portfolio Value")
+    plt.xlabel("Time Step")
+    plt.ylabel("Portfolio Value")
+    plt.grid(True)
+    plt.tight_layout()
+    plot_filename = f"outputs/{agent_type}_evaluation_performance_{dt_str}.png"
+    plt.savefig(plot_filename)
+    plt.close()
+
+    return results_df, metrics
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Train and evaluate a specialized PPO agent with its best hyperparameters.")
+    parser = argparse.ArgumentParser(description="Train and evaluate PPO agents (profit, risk, cost).")
     parser.add_argument(
         "--agent",
         type=str,
-        required=True,
-        choices=['profit', 'risk', 'cost'],
-        help="The type of agent to train and evaluate."
+        default="all",
+        choices=['profit', 'risk', 'cost', 'all'],
+        help="Choose one agent or 'all' to evaluate all agents."
     )
     parser.add_argument(
         "--timesteps",
         type=int,
         default=200000,
-        help="Number of timesteps to train the agent before evaluation."
+        help="Number of timesteps for training each agent."
     )
     args = parser.parse_args()
-    agent_type = args.agent
 
-    # 1. Load Data and Forecast Models
+    # --- Load data and models ---
     try:
         data = pd.read_csv('data/fcpo_daily.csv', parse_dates=['datetime'])
         data = data.drop(['symbol'], axis=1)
@@ -48,124 +169,44 @@ def main():
         print(f"Error loading forecast model: {e}")
         sys.exit(1)
 
-    # 2. Load and Separate Hyperparameters
-    hyperparams_path = f"models/{agent_type}_agent_best_hyperparameters.pkl"
-    try:
-        with open(hyperparams_path, "rb") as f:
-            best_hyperparameters = pickle.load(f)
-    except FileNotFoundError:
-        print(f"Error: Hyperparameter file not found at {hyperparams_path}.")
-        print(f"Please run 'python src/agents/tune_agent.py --agent {agent_type}' first.")
-        sys.exit(1)
+    agent_list = ['profit', 'risk', 'cost'] if args.agent == 'all' else [args.agent]
 
-    risk_aversion = best_hyperparameters.pop('risk_aversion', 0.0)
-    ppo_hyperparameters = best_hyperparameters
-    ppo_hyperparameters.setdefault('max_grad_norm', 0.5) # Add default grad clipping
+    summary = []
+    for agent_type in agent_list:
+        results_df, metrics = train_and_evaluate(
+            agent_type, data, forecast_nextday_model, forecast_nextmonth_model, args.timesteps
+        )
+        metrics['Agent'] = agent_type.title()
+        summary.append(metrics)
 
-    print(f"--- Loaded Best Hyperparameters for {agent_type.title()} Agent ---")
-    for key, value in ppo_hyperparameters.items():
-        print(f"    {key}: {value}")
+    # --- Summarize all metrics ---
+    summary_df = pd.DataFrame(summary)[['Agent', 'ROI', 'Sharpe Ratio', 'Cost Efficiency Ratio']]
+    summary_path = "outputs/agent_performance_summary.csv"
+    summary_df.to_csv(summary_path, index=False)
 
-    # 3. Create and Train the Agent
-    print(f"\n--- Training {agent_type.title()} Agent with Best Hyperparameters ---")
-    reward_strategy_map = {'profit': 'profit', 'risk': 'sharpe', 'cost': 'cost'}
-    reward_strategy = reward_strategy_map[agent_type]
-    tensorboard_log_path = f"./tensorboard_logs/{agent_type}_agent/"
+    print("\n===== PERFORMANCE SUMMARY =====")
+    print(summary_df)
 
-    train_env = HedgeEnv(
-        data=data,
-        forecast_nextday_model=forecast_nextday_model,
-        forecast_nextmonth_model=forecast_nextmonth_model,
-        start_date='2005-05-02',
-        end_date='2021-08-16',
-        reward_strategy=reward_strategy,
-        risk_aversion=risk_aversion
-    )
-    
-    # The Monitor wrapper is essential for SB3 logging
-    monitored_env = Monitor(train_env, tensorboard_log_path)
-    train_vec_env = DummyVecEnv([lambda: monitored_env])
-    train_vec_env = VecNormalize(train_vec_env, norm_obs=True, norm_reward=True)
+    # --- Combined comparison plot ---
+    plt.figure(figsize=(10, 6))
+    for agent_type in agent_list:
+        filename = max([f for f in os.listdir("outputs") if f.startswith(agent_type) and f.endswith(".csv")],
+                       key=lambda x: os.path.getctime(os.path.join("outputs", x)))
+        df = pd.read_csv(os.path.join("outputs", filename))
+        plt.plot(df['timestep'], df['portfolio_value'], label=agent_type.title())
 
-    model = PPO(
-        "MlpPolicy",
-        train_vec_env,
-        verbose=0,
-        tensorboard_log=tensorboard_log_path, # Enable Tensorboard logging
-        **ppo_hyperparameters
-    )
-    
-    try:
-        model.learn(total_timesteps=args.timesteps)
-        print("--- Training Complete ---")
-    except ValueError as e:
-        print(f"\nERROR: Training failed with a ValueError: {e}")
-        sys.exit(1)
-
-    dt_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    # Save the trained model and normalization stats
-    model_save_path = f"models/evaluated_{agent_type}_agent_{dt_str}.zip"
-    stats_path = os.path.join(tensorboard_log_path, "vec_normalize.pkl")
-    model.save(model_save_path)
-    train_vec_env.save(stats_path)
-    print(f"Trained model saved to {model_save_path}")
-    print(f"Normalization stats saved to {stats_path}")
-
-    # 4. Initialize Evaluation Environment
-    eval_env = HedgeEnv(
-        data=data,
-        forecast_nextday_model=forecast_nextday_model,
-        forecast_nextmonth_model=forecast_nextmonth_model,
-        start_date='2021-08-17',
-        end_date='2025-09-11',
-        reward_strategy=reward_strategy,
-        risk_aversion=risk_aversion
-    )
-
-    # Correctly apply normalization from training to evaluation
-    eval_vec_env = DummyVecEnv([lambda: Monitor(eval_env)])
-    eval_vec_env = VecNormalize.load(stats_path, eval_vec_env)
-    eval_vec_env.training = False
-    eval_vec_env.norm_reward = False
-
-    # 5. Run Evaluation
-    print(f"\n--- Evaluating Trained {agent_type.title()} Agent ---")
-    obs = eval_vec_env.reset()
-    done = False
-    results = []
-    while not done:
-        action, _states = model.predict(obs, deterministic=True)
-        obs, rewards, dones, infos = eval_vec_env.step(action)
-        done = dones[0]
-        info = infos[0]
-        results.append({
-            'timestep': info['current_step'],
-            'portfolio_value': info['portfolio_value'],
-            'hedge_ratio': float(action[0]),
-            'reward': rewards[0]
-        })
-
-    results_df = pd.DataFrame(results)
-    final_portfolio_value = results_df['portfolio_value'].iloc[-1]
-    
-    print("--- Evaluation Complete ---")
-    print(f"Final Portfolio Value: {final_portfolio_value:,.2f}")
-
-    results_filename = f"outputs/{agent_type}_evaluation_results_{dt_str}.csv"
-    results_df.to_csv(results_filename, index=False)
-    print(f"Evaluation results saved to {results_filename}")
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(results_df['timestep'], results_df['portfolio_value'])
-    plt.title(f"{agent_type.title()} Agent Portfolio Value Over Time (Evaluation)")
+    plt.title("Agent Comparison: Portfolio Value Over Time")
     plt.xlabel("Time Step")
     plt.ylabel("Portfolio Value")
+    plt.legend()
     plt.grid(True)
-    plot_filename = f"outputs/{agent_type}_evaluation_performance_{dt_str}.png"
-    plt.savefig(plot_filename)
-    print(f"Performance plot saved to {plot_filename}")
+    plt.tight_layout()
+    plt.savefig("outputs/all_agents_comparison.png")
     plt.show()
+
+    print(f"\nSummary saved to {summary_path}")
+    print("Combined performance plot saved to outputs/all_agents_comparison.png")
+
 
 if __name__ == '__main__':
     main()
