@@ -18,20 +18,20 @@ class HedgeEnv(gym.Env):
                  lot_size=25,
                  transaction_cost_pct=0.001,
                  max_episode_steps=90,
-                 risk_aversion=0.01,
-                 reward_strategy='profit'):
+                 reward_window_size=30,
+                 daily_sales_percentage=0.1):
         super(HedgeEnv, self).__init__()
 
         self.data = data.reset_index(drop=True)
         self.forecast_nextday_model = forecast_nextday_model
         self.forecast_nextmonth_model = forecast_nextmonth_model
-        self.start_date = pd.to_datetime(start_date, dayfirst=True).timestamp()
-        self.end_date = pd.to_datetime(end_date, dayfirst=True).timestamp()
+        self.start_date = pd.to_datetime(start_date, dayfirst=False).timestamp()
+        self.end_date = pd.to_datetime(end_date, dayfirst=False).timestamp()
         self.initial_cash = initial_cash
         self.lot_size = lot_size
         self.transaction_cost_pct = transaction_cost_pct
-        self.risk_aversion = risk_aversion
-        self.reward_strategy = reward_strategy
+        self.reward_window_size = reward_window_size
+        self.daily_sales_percentage = daily_sales_percentage
 
         self.simulation_data = self.data[
             (self.data['datetime'] >= self.start_date) &
@@ -39,15 +39,34 @@ class HedgeEnv(gym.Env):
         ].reset_index(drop=True)
 
         self.max_episode_steps = max_episode_steps
+        self._prepare_data()
 
+        # Observation space now includes: current_price, forecast_nextday, forecast_nextmonth,
+        # cash, cpo_inventory, futures_positions, volatility, day_of_week, day_of_month, month, volume
         self.observation_space = spaces.Box(
-            low=np.array([-np.inf, -np.inf, -np.inf, 0, 0, -np.inf]),
-            high=np.array([np.inf, np.inf, np.inf, np.inf, np.inf, np.inf]),
+            low=np.array([-np.inf] * 11),
+            high=np.array([np.inf] * 11),
             dtype=np.float32
         )
         self.action_space = spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32)
 
         self.reset()
+
+    def _prepare_data(self):
+        """Pre-calculates and adds technical indicators and time-based features to the data."""
+        self.simulation_data['returns'] = self.simulation_data['close'].pct_change()
+        self.simulation_data['volatility'] = self.simulation_data['returns'].rolling(window=30).std().fillna(0)
+
+        # Convert timestamp to datetime objects for feature extraction
+        datetime_series = pd.to_datetime(self.simulation_data['datetime'], unit='s')
+        self.simulation_data['day_of_week'] = datetime_series.dt.dayofweek
+        self.simulation_data['day_of_month'] = datetime_series.dt.day
+        self.simulation_data['month'] = datetime_series.dt.month
+        
+        # Handle potential missing values from rolling calculations
+        self.simulation_data.bfill(inplace=True)
+        self.simulation_data.ffill(inplace=True)
+
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -66,8 +85,8 @@ class HedgeEnv(gym.Env):
 
         # Tracking metrics
         self.daily_returns = []
-        self.portfolio_values = [self.portfolio_value]  # ✅ newly added
-        self.transaction_costs = []  # ✅ newly added
+        self.portfolio_values = [self.portfolio_value]
+        self.transaction_costs = []
         self.history = []
 
         return self._get_observation(), self._get_info()
@@ -76,12 +95,15 @@ class HedgeEnv(gym.Env):
         if self.current_step >= len(self.simulation_data):
             return np.zeros(self.observation_space.shape)
 
-        current_price = self.simulation_data.iloc[self.current_step]['close']
-        current_data = self.simulation_data.iloc[self.current_step].to_frame().T
+        row = self.simulation_data.iloc[self.current_step]
+        current_price = row['close']
+        
+        # The forecast models expect a DataFrame with the original features
+        current_data_for_model = self.data[self.data['datetime'] == row['datetime']]
 
         try:
-            forecast_nextday_price = self.forecast_nextday_model.predict(current_data)[0]
-            forecast_nextmonth_price = self.forecast_nextmonth_model.predict(current_data)[0]
+            forecast_nextday_price = self.forecast_nextday_model.predict(current_data_for_model)[0]
+            forecast_nextmonth_price = self.forecast_nextmonth_model.predict(current_data_for_model)[0]
         except Exception:
             forecast_nextday_price = current_price
             forecast_nextmonth_price = current_price
@@ -92,7 +114,12 @@ class HedgeEnv(gym.Env):
             forecast_nextmonth_price,
             self.cash,
             self.cpo_inventory,
-            self.futures_positions
+            self.futures_positions,
+            row['volatility'],
+            row['day_of_week'],
+            row['day_of_month'],
+            row['month'],
+            row['volume']
         ], dtype=np.float32)
         return obs
 
@@ -130,11 +157,17 @@ class HedgeEnv(gym.Env):
             margin_penalty = shortfall * 0.1
             self.cash -= margin_penalty
 
-        # Daily sales and futures PnL
+        # Daily production and sales
         daily_cpo_production = self.np_random.uniform(80, 120)
-        daily_sales = daily_cpo_production * current_price
-        self.cash += daily_sales
+        self.cpo_inventory += daily_cpo_production
 
+        # Sell a portion of the inventory
+        amount_to_sell = self.cpo_inventory * self.daily_sales_percentage
+        daily_sales = amount_to_sell * current_price
+        self.cash += daily_sales
+        self.cpo_inventory -= amount_to_sell
+
+        # Futures PnL
         futures_pnl = (current_price - next_price) * self.futures_positions * self.lot_size
         self.cash += futures_pnl
 
@@ -147,18 +180,17 @@ class HedgeEnv(gym.Env):
         step_return = step_pnl / prev_value if prev_value > 0 else 0.0
 
         self.daily_returns.append(step_return)
-        self.portfolio_values.append(self.portfolio_value)  # ✅ track continuously
+        self.portfolio_values.append(self.portfolio_value)
         self.transaction_costs.append(transaction_cost + hedging_cost + margin_penalty)
 
-        # Reward logic
-        if self.reward_strategy == 'profit':
-            reward = step_pnl
-        elif self.reward_strategy == 'sharpe':
-            reward = step_pnl - self.risk_aversion * (step_pnl ** 2)
-        elif self.reward_strategy == 'cost':
-            reward = -(transaction_cost + hedging_cost + margin_penalty)
-        else:
-            raise ValueError(f"Unknown reward strategy: {self.reward_strategy}")
+        # Reward logic: Rolling Sharpe Ratio
+        reward = 0.0
+        if len(self.daily_returns) >= self.reward_window_size:
+            window_returns = np.array(self.daily_returns[-self.reward_window_size:])
+            mean_return = np.mean(window_returns)
+            std_return = np.std(window_returns)
+            if std_return > 0:
+                reward = mean_return / std_return
 
         self.current_step += 1
         self.episode_step_count += 1

@@ -12,6 +12,46 @@ from datetime import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from src.environment.hedge_env import HedgeEnv
 
+
+def evaluate_model(model, data, forecast_nextday_model, forecast_nextmonth_model, agent_type):
+    """
+    Evaluate a trained model on the environment without any wrappers.
+    """
+    print(f"\n--- Evaluating {agent_type.title()} Agent ---")
+
+    eval_env = HedgeEnv(
+        data=data,
+        forecast_nextday_model=forecast_nextday_model,
+        forecast_nextmonth_model=forecast_nextmonth_model,
+        start_date='2021-08-17',
+        end_date='2025-09-11'
+    )
+
+    obs, _ = eval_env.reset()
+    results = []
+
+    for _ in range(eval_env.max_episode_steps):
+        action, _ = model.predict(obs, deterministic=True)
+        obs, reward, terminated, truncated, info = eval_env.step(action)
+        results.append({
+            'timestep': info['current_step'],
+            'portfolio_value': info['portfolio_value'],
+            'hedge_ratio': action.item(),
+            'reward': reward
+        })
+        if terminated or truncated:
+            break
+
+    results_df = pd.DataFrame(results)
+    final_value = results_df['portfolio_value'].iloc[-1]
+    metrics = eval_env.compute_metrics()
+
+    print(f"--- Evaluation Complete for {agent_type.title()} ---")
+    print(f"Final Portfolio Value: {final_value:,.2f}")
+    print(f"Metrics: ROI={metrics['ROI']:.6f}, Sharpe={metrics['Sharpe Ratio']:.4f}, CostEff={metrics['Cost Efficiency Ratio']:.4f}")
+
+    return results_df, metrics
+
 def train_and_evaluate(agent_type, data, forecast_nextday_model, forecast_nextmonth_model, timesteps):
     """
     Train and evaluate one agent type (profit, risk, or cost).
@@ -26,17 +66,15 @@ def train_and_evaluate(agent_type, data, forecast_nextday_model, forecast_nextmo
         print(f"Error: Hyperparameter file not found at {hyperparams_path}.")
         sys.exit(1)
 
-    risk_aversion = best_hyperparameters.pop('risk_aversion', 0.0)
+    risk_aversion = best_hyperparameters.pop('risk_aversion', 0.0)  # Kept for compatibility with old files
     ppo_hyperparameters = best_hyperparameters
     ppo_hyperparameters.setdefault('max_grad_norm', 0.5)
 
     print(f"\n--- Loaded Best Hyperparameters for {agent_type.title()} Agent ---")
     for k, v in ppo_hyperparameters.items():
         print(f"    {k}: {v}")
+    print("INFO: All agents now train on the unified rolling Sharpe ratio reward signal.")
 
-    # Reward strategy mapping
-    reward_strategy_map = {'profit': 'profit', 'risk': 'sharpe', 'cost': 'cost'}
-    reward_strategy = reward_strategy_map[agent_type]
     tensorboard_log_path = f"./tensorboard_logs/{agent_type}_agent/"
 
     # --- Training Environment ---
@@ -45,9 +83,7 @@ def train_and_evaluate(agent_type, data, forecast_nextday_model, forecast_nextmo
         forecast_nextday_model=forecast_nextday_model,
         forecast_nextmonth_model=forecast_nextmonth_model,
         start_date='2005-05-02',
-        end_date='2021-08-16',
-        reward_strategy=reward_strategy,
-        risk_aversion=risk_aversion
+        end_date='2021-08-16'
     )
 
     monitored_env = Monitor(train_env, tensorboard_log_path)
@@ -72,47 +108,8 @@ def train_and_evaluate(agent_type, data, forecast_nextday_model, forecast_nextmo
     model.save(model_save_path)
     train_vec_env.save(stats_path)
 
-    # --- Evaluation Environment ---
-    eval_env = HedgeEnv(
-        data=data,
-        forecast_nextday_model=forecast_nextday_model,
-        forecast_nextmonth_model=forecast_nextmonth_model,
-        start_date='2021-08-17',
-        end_date='2025-09-11',
-        reward_strategy=reward_strategy,
-        risk_aversion=risk_aversion
-    )
-
-    eval_vec_env = DummyVecEnv([lambda: Monitor(eval_env)])
-    eval_vec_env = VecNormalize.load(stats_path, eval_vec_env)
-    eval_vec_env.training = False
-    eval_vec_env.norm_reward = False
-
-    # --- Run Evaluation ---
-    print(f"\n--- Evaluating {agent_type.title()} Agent ---")
-    obs = eval_vec_env.reset()
-    done = False
-    results = []
-
-    while not done:
-        action, _states = model.predict(obs, deterministic=True)
-        obs, rewards, dones, infos = eval_vec_env.step(action)
-        done = dones[0]
-        info = infos[0]
-        results.append({
-            'timestep': info['current_step'],
-            'portfolio_value': info['portfolio_value'],
-            'hedge_ratio': float(action[0]),
-            'reward': rewards[0]
-        })
-
-    results_df = pd.DataFrame(results)
-    final_value = results_df['portfolio_value'].iloc[-1]
-    metrics = eval_env.compute_metrics()
-
-    print(f"--- Evaluation Complete for {agent_type.title()} ---")
-    print(f"Final Portfolio Value: {final_value:,.2f}")
-    print(f"Metrics: ROI={metrics['ROI']:.6f}, Sharpe={metrics['Sharpe Ratio']:.4f}, CostEff={metrics['Cost Efficiency Ratio']:.4f}")
+    # --- Evaluation ---
+    results_df, metrics = evaluate_model(model, data, forecast_nextday_model, forecast_nextmonth_model, agent_type)
 
     # Save outputs
     os.makedirs("outputs", exist_ok=True)
@@ -132,6 +129,10 @@ def train_and_evaluate(agent_type, data, forecast_nextday_model, forecast_nextmo
     plt.close()
 
     return results_df, metrics
+
+
+
+    
 
 
 def main():
@@ -155,7 +156,7 @@ def main():
     try:
         data = pd.read_csv('data/fcpo_daily.csv', parse_dates=['datetime'])
         data = data.drop(['symbol'], axis=1)
-        data['datetime'] = pd.to_datetime(data['datetime'], dayfirst=True).astype(int) / 10**9
+        data['datetime'] = pd.to_datetime(data['datetime'], dayfirst=False).astype(int) / 10**9
     except FileNotFoundError:
         print("Error: data/fcpo_daily.csv not found.")
         sys.exit(1)
