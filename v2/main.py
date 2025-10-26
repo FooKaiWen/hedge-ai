@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
@@ -58,7 +58,7 @@ def load_and_preprocess_data(file_path='palm_oil_data.csv'):
     
     return df
 
-# Step 2: Define Custom Gym Environment for RL Hedging
+# Step 2: Define Custom Gymnasium Environment for RL Hedging
 class HedgingEnv(gym.Env):
     def __init__(self, df, episode_length=30):
         super(HedgingEnv, self).__init__()
@@ -73,11 +73,13 @@ class HedgingEnv(gym.Env):
         self.action_space = spaces.Box(low=0.0, high=2.0, shape=(1,), dtype=np.float32)  # Hedge ratio between 0 and 2
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.features),), dtype=np.float32)
     
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
+        if seed is not None:
+            np.random.seed(seed)
         self.start_step = np.random.randint(0, self.max_steps)
         self.current_step = 0
         self.hedged_returns = []
-        return self._get_obs()
+        return self._get_obs(), {}
     
     def step(self, action):
         h = action[0]
@@ -89,13 +91,14 @@ class HedgingEnv(gym.Env):
         
         reward = 0.0
         self.current_step += 1
-        done = self.current_step >= self.episode_length
-        if done:
-            # Terminal reward: negative variance of hedged returns over episode
+        terminated = False
+        truncated = self.current_step >= self.episode_length
+        if truncated:
             reward = -np.var(self.hedged_returns)
         
-        obs = self._get_obs() if not done else np.zeros(self.observation_space.shape[0], dtype=np.float32)
-        return obs, reward, done, {}
+        obs = self._get_obs() if not truncated else np.zeros(self.observation_space.shape, dtype=np.float32)
+        info = {}
+        return obs, reward, terminated, truncated, info
     
     def _get_obs(self):
         abs_step = self.start_step + self.current_step
@@ -130,13 +133,14 @@ def train_agent(df_train, model_path='ppo_hedging_model.zip'):
 # Step 4: Agent Evaluation with Benchmarks
 def evaluate_agent(model, df_test):
     env = HedgingEnv(df_test)
-    obs = env.reset()
+    obs, info = env.reset()
     hedged_returns_rl = []
     actions = []
-    done = False
-    while not done:
+    terminated = False
+    truncated = False
+    while not (terminated or truncated):
         action, _ = model.predict(obs, deterministic=True)
-        obs, reward, done, _ = env.step(action)
+        obs, reward, terminated, truncated, info = env.step(action)
         h = action[0]
         actions.append(h)
         # Collect hedged returns from env's list (since reward is terminal)

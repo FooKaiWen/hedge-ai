@@ -16,7 +16,7 @@ venv/
 tensorboard_logs/
 logs/
 *.log
-*.csv
+# *.csv
 *.zip
 *.png
 

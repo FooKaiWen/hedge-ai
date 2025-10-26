@@ -1,0 +1,485 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><div>
+	<table class="tblData" cellspacing="0" cellpadding="3" align="Center" rules="all" border="1" id="gvPrices" style="border-collapse:collapse;">
+		<caption>
+			Palm oil - Monthly Price (Malaysian Ringgit per Metric Ton)
+		</caption><tr style="background-color:#E5ECF9;">
+			<th scope="col">Month</th><th scope="col">Price</th><th scope="col">Change</th>
+		</tr><tr align="right">
+			<td>Sep 2005</td><td>1,709.57</td><td>-</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2005</td><td>1,763.95</td><td>3.18%</td>
+		</tr><tr align="right">
+			<td>Nov 2005</td><td>1,763.76</td><td>-0.01%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2005</td><td>1,725.79</td><td>-2.15%</td>
+		</tr><tr align="right">
+			<td>Jan 2006</td><td>1,721.96</td><td>-0.22%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2006</td><td>1,765.41</td><td>2.52%</td>
+		</tr><tr align="right">
+			<td>Mar 2006</td><td>1,750.62</td><td>-0.84%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2006</td><td>1,743.15</td><td>-0.43%</td>
+		</tr><tr align="right">
+			<td>May 2006</td><td>1,748.84</td><td>0.33%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2006</td><td>1,752.37</td><td>0.20%</td>
+		</tr><tr align="right">
+			<td>Jul 2006</td><td>1,831.58</td><td>4.52%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2006</td><td>1,963.38</td><td>7.20%</td>
+		</tr><tr align="right">
+			<td>Sep 2006</td><td>1,877.69</td><td>-4.36%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2006</td><td>1,891.61</td><td>0.74%</td>
+		</tr><tr align="right">
+			<td>Nov 2006</td><td>2,082.71</td><td>10.10%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2006</td><td>2,224.65</td><td>6.82%</td>
+		</tr><tr align="right">
+			<td>Jan 2007</td><td>2,236.55</td><td>0.53%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2007</td><td>2,255.82</td><td>0.86%</td>
+		</tr><tr align="right">
+			<td>Mar 2007</td><td>2,308.28</td><td>2.33%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2007</td><td>2,556.68</td><td>10.76%</td>
+		</tr><tr align="right">
+			<td>May 2007</td><td>2,776.31</td><td>8.59%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2007</td><td>2,870.40</td><td>3.39%</td>
+		</tr><tr align="right">
+			<td>Jul 2007</td><td>2,941.27</td><td>2.47%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2007</td><td>2,894.63</td><td>-1.59%</td>
+		</tr><tr align="right">
+			<td>Sep 2007</td><td>2,957.49</td><td>2.17%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2007</td><td>3,129.16</td><td>5.80%</td>
+		</tr><tr align="right">
+			<td>Nov 2007</td><td>3,352.70</td><td>7.14%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2007</td><td>3,341.59</td><td>-0.33%</td>
+		</tr><tr align="right">
+			<td>Jan 2008</td><td>3,667.05</td><td>9.74%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2008</td><td>4,087.85</td><td>11.48%</td>
+		</tr><tr align="right">
+			<td>Mar 2008</td><td>4,388.86</td><td>7.36%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2008</td><td>4,174.37</td><td>-4.89%</td>
+		</tr><tr align="right">
+			<td>May 2008</td><td>4,268.52</td><td>2.26%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2008</td><td>4,212.81</td><td>-1.30%</td>
+		</tr><tr align="right">
+			<td>Jul 2008</td><td>3,943.75</td><td>-6.39%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2008</td><td>3,206.12</td><td>-18.70%</td>
+		</tr><tr align="right">
+			<td>Sep 2008</td><td>2,842.85</td><td>-11.33%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2008</td><td>2,241.93</td><td>-21.14%</td>
+		</tr><tr align="right">
+			<td>Nov 2008</td><td>2,084.96</td><td>-7.00%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2008</td><td>2,087.83</td><td>0.14%</td>
+		</tr><tr align="right">
+			<td>Jan 2009</td><td>2,348.49</td><td>12.48%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2009</td><td>2,385.66</td><td>1.58%</td>
+		</tr><tr align="right">
+			<td>Mar 2009</td><td>2,425.91</td><td>1.69%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2009</td><td>2,886.94</td><td>19.00%</td>
+		</tr><tr align="right">
+			<td>May 2009</td><td>3,073.68</td><td>6.47%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2009</td><td>2,774.35</td><td>-9.74%</td>
+		</tr><tr align="right">
+			<td>Jul 2009</td><td>2,477.21</td><td>-10.71%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2009</td><td>2,624.38</td><td>5.94%</td>
+		</tr><tr align="right">
+			<td>Sep 2009</td><td>2,461.30</td><td>-6.21%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2009</td><td>2,466.55</td><td>0.21%</td>
+		</tr><tr align="right">
+			<td>Nov 2009</td><td>2,587.27</td><td>4.89%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2009</td><td>2,803.75</td><td>8.37%</td>
+		</tr><tr align="right">
+			<td>Jan 2010</td><td>2,804.35</td><td>0.02%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2010</td><td>2,835.02</td><td>1.09%</td>
+		</tr><tr align="right">
+			<td>Mar 2010</td><td>2,869.37</td><td>1.21%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2010</td><td>2,766.06</td><td>-3.60%</td>
+		</tr><tr align="right">
+			<td>May 2010</td><td>2,785.22</td><td>0.69%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2010</td><td>2,695.44</td><td>-3.22%</td>
+		</tr><tr align="right">
+			<td>Jul 2010</td><td>2,709.73</td><td>0.53%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2010</td><td>2,975.21</td><td>9.80%</td>
+		</tr><tr align="right">
+			<td>Sep 2010</td><td>2,947.02</td><td>-0.95%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2010</td><td>3,180.54</td><td>7.92%</td>
+		</tr><tr align="right">
+			<td>Nov 2010</td><td>3,517.82</td><td>10.60%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2010</td><td>3,863.68</td><td>9.83%</td>
+		</tr><tr align="right">
+			<td>Jan 2011</td><td>3,990.39</td><td>3.28%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2011</td><td>4,041.00</td><td>1.27%</td>
+		</tr><tr align="right">
+			<td>Mar 2011</td><td>3,770.94</td><td>-6.68%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2011</td><td>3,674.35</td><td>-2.56%</td>
+		</tr><tr align="right">
+			<td>May 2011</td><td>3,706.00</td><td>0.86%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2011</td><td>3,612.62</td><td>-2.52%</td>
+		</tr><tr align="right">
+			<td>Jul 2011</td><td>3,544.08</td><td>-1.90%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2011</td><td>3,598.70</td><td>1.54%</td>
+		</tr><tr align="right">
+			<td>Sep 2011</td><td>3,515.73</td><td>-2.31%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2011</td><td>3,280.77</td><td>-6.68%</td>
+		</tr><tr align="right">
+			<td>Nov 2011</td><td>3,506.53</td><td>6.88%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2011</td><td>3,547.08</td><td>1.16%</td>
+		</tr><tr align="right">
+			<td>Jan 2012</td><td>3,496.05</td><td>-1.44%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2012</td><td>3,467.32</td><td>-0.82%</td>
+		</tr><tr align="right">
+			<td>Mar 2012</td><td>3,639.02</td><td>4.95%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2012</td><td>3,777.25</td><td>3.80%</td>
+		</tr><tr align="right">
+			<td>May 2012</td><td>3,482.77</td><td>-7.80%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2012</td><td>3,267.15</td><td>-6.19%</td>
+		</tr><tr align="right">
+			<td>Jul 2012</td><td>3,336.54</td><td>2.12%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2012</td><td>3,186.93</td><td>-4.48%</td>
+		</tr><tr align="right">
+			<td>Sep 2012</td><td>3,084.92</td><td>-3.20%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2012</td><td>2,709.09</td><td>-12.18%</td>
+		</tr><tr align="right">
+			<td>Nov 2012</td><td>2,640.54</td><td>-2.53%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2012</td><td>2,577.31</td><td>-2.39%</td>
+		</tr><tr align="right">
+			<td>Jan 2013</td><td>2,688.83</td><td>4.33%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2013</td><td>2,848.89</td><td>5.95%</td>
+		</tr><tr align="right">
+			<td>Mar 2013</td><td>2,771.59</td><td>-2.71%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2013</td><td>2,665.96</td><td>-3.81%</td>
+		</tr><tr align="right">
+			<td>May 2013</td><td>2,653.34</td><td>-0.47%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2013</td><td>2,761.19</td><td>4.06%</td>
+		</tr><tr align="right">
+			<td>Jul 2013</td><td>2,639.26</td><td>-4.42%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2013</td><td>2,688.62</td><td>1.87%</td>
+		</tr><tr align="right">
+			<td>Sep 2013</td><td>2,683.68</td><td>-0.18%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2013</td><td>2,732.62</td><td>1.82%</td>
+		</tr><tr align="right">
+			<td>Nov 2013</td><td>2,890.46</td><td>5.78%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2013</td><td>2,880.56</td><td>-0.34%</td>
+		</tr><tr align="right">
+			<td>Jan 2014</td><td>2,849.43</td><td>-1.08%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2014</td><td>2,994.01</td><td>5.07%</td>
+		</tr><tr align="right">
+			<td>Mar 2014</td><td>3,132.48</td><td>4.62%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2014</td><td>3,018.84</td><td>-3.63%</td>
+		</tr><tr align="right">
+			<td>May 2014</td><td>2,901.53</td><td>-3.89%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2014</td><td>2,774.23</td><td>-4.39%</td>
+		</tr><tr align="right">
+			<td>Jul 2014</td><td>2,718.79</td><td>-2.00%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2014</td><td>2,475.03</td><td>-8.97%</td>
+		</tr><tr align="right">
+			<td>Sep 2014</td><td>2,448.21</td><td>-1.08%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2014</td><td>2,499.08</td><td>2.08%</td>
+		</tr><tr align="right">
+			<td>Nov 2014</td><td>2,556.22</td><td>2.29%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2014</td><td>2,504.35</td><td>-2.03%</td>
+		</tr><tr align="right">
+			<td>Jan 2015</td><td>2,582.27</td><td>3.11%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2015</td><td>2,598.85</td><td>0.64%</td>
+		</tr><tr align="right">
+			<td>Mar 2015</td><td>2,572.42</td><td>-1.02%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2015</td><td>2,482.23</td><td>-3.51%</td>
+		</tr><tr align="right">
+			<td>May 2015</td><td>2,512.76</td><td>1.23%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2015</td><td>2,639.46</td><td>5.04%</td>
+		</tr><tr align="right">
+			<td>Jul 2015</td><td>2,585.27</td><td>-2.05%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2015</td><td>2,441.65</td><td>-5.56%</td>
+		</tr><tr align="right">
+			<td>Sep 2015</td><td>2,579.19</td><td>5.63%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2015</td><td>2,720.35</td><td>5.47%</td>
+		</tr><tr align="right">
+			<td>Nov 2015</td><td>2,626.27</td><td>-3.46%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2015</td><td>2,600.24</td><td>-0.99%</td>
+		</tr><tr align="right">
+			<td>Jan 2016</td><td>2,657.35</td><td>2.20%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2016</td><td>2,844.59</td><td>7.05%</td>
+		</tr><tr align="right">
+			<td>Mar 2016</td><td>2,923.83</td><td>2.79%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2016</td><td>3,025.96</td><td>3.49%</td>
+		</tr><tr align="right">
+			<td>May 2016</td><td>3,047.72</td><td>0.72%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2016</td><td>2,937.57</td><td>-3.61%</td>
+		</tr><tr align="right">
+			<td>Jul 2016</td><td>2,727.56</td><td>-7.15%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2016</td><td>3,104.83</td><td>13.83%</td>
+		</tr><tr align="right">
+			<td>Sep 2016</td><td>3,277.99</td><td>5.58%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2016</td><td>3,132.30</td><td>-4.44%</td>
+		</tr><tr align="right">
+			<td>Nov 2016</td><td>3,314.63</td><td>5.82%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2016</td><td>3,619.93</td><td>9.21%</td>
+		</tr><tr align="right">
+			<td>Jan 2017</td><td>3,681.41</td><td>1.70%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2017</td><td>3,594.41</td><td>-2.36%</td>
+		</tr><tr align="right">
+			<td>Mar 2017</td><td>3,457.08</td><td>-3.82%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2017</td><td>3,314.51</td><td>-4.12%</td>
+		</tr><tr align="right">
+			<td>May 2017</td><td>3,292.07</td><td>-0.68%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2017</td><td>3,143.11</td><td>-4.52%</td>
+		</tr><tr align="right">
+			<td>Jul 2017</td><td>3,090.92</td><td>-1.66%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2017</td><td>3,075.94</td><td>-0.48%</td>
+		</tr><tr align="right">
+			<td>Sep 2017</td><td>3,178.87</td><td>3.35%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2017</td><td>3,157.88</td><td>-0.66%</td>
+		</tr><tr align="right">
+			<td>Nov 2017</td><td>3,045.32</td><td>-3.56%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2017</td><td>2,769.64</td><td>-9.05%</td>
+		</tr><tr align="right">
+			<td>Jan 2018</td><td>2,784.12</td><td>0.52%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2018</td><td>2,776.56</td><td>-0.27%</td>
+		</tr><tr align="right">
+			<td>Mar 2018</td><td>2,755.60</td><td>-0.75%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2018</td><td>2,724.94</td><td>-1.11%</td>
+		</tr><tr align="right">
+			<td>May 2018</td><td>2,724.01</td><td>-0.03%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2018</td><td>2,625.90</td><td>-3.60%</td>
+		</tr><tr align="right">
+			<td>Jul 2018</td><td>2,495.02</td><td>-4.98%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2018</td><td>2,512.69</td><td>0.71%</td>
+		</tr><tr align="right">
+			<td>Sep 2018</td><td>2,505.68</td><td>-0.28%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2018</td><td>2,454.97</td><td>-2.02%</td>
+		</tr><tr align="right">
+			<td>Nov 2018</td><td>2,256.61</td><td>-8.08%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2018</td><td>2,233.88</td><td>-1.01%</td>
+		</tr><tr align="right">
+			<td>Jan 2019</td><td>2,406.17</td><td>7.71%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2019</td><td>2,456.71</td><td>2.10%</td>
+		</tr><tr align="right">
+			<td>Mar 2019</td><td>2,337.38</td><td>-4.86%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2019</td><td>2,420.91</td><td>3.57%</td>
+		</tr><tr align="right">
+			<td>May 2019</td><td>2,348.56</td><td>-2.99%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2019</td><td>2,298.05</td><td>-2.15%</td>
+		</tr><tr align="right">
+			<td>Jul 2019</td><td>2,242.56</td><td>-2.41%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2019</td><td>2,454.73</td><td>9.46%</td>
+		</tr><tr align="right">
+			<td>Sep 2019</td><td>2,428.83</td><td>-1.05%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2019</td><td>2,477.04</td><td>1.98%</td>
+		</tr><tr align="right">
+			<td>Nov 2019</td><td>2,841.17</td><td>14.70%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2019</td><td>3,196.59</td><td>12.51%</td>
+		</tr><tr align="right">
+			<td>Jan 2020</td><td>3,406.83</td><td>6.58%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2020</td><td>3,035.28</td><td>-10.91%</td>
+		</tr><tr align="right">
+			<td>Mar 2020</td><td>2,733.56</td><td>-9.94%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2020</td><td>2,651.88</td><td>-2.99%</td>
+		</tr><tr align="right">
+			<td>May 2020</td><td>2,504.71</td><td>-5.55%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2020</td><td>2,806.79</td><td>12.06%</td>
+		</tr><tr align="right">
+			<td>Jul 2020</td><td>2,959.72</td><td>5.45%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2020</td><td>3,186.16</td><td>7.65%</td>
+		</tr><tr align="right">
+			<td>Sep 2020</td><td>3,305.09</td><td>3.73%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2020</td><td>3,402.78</td><td>2.96%</td>
+		</tr><tr align="right">
+			<td>Nov 2020</td><td>3,779.19</td><td>11.06%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2020</td><td>4,129.47</td><td>9.27%</td>
+		</tr><tr align="right">
+			<td>Jan 2021</td><td>3,997.72</td><td>-3.19%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2021</td><td>4,126.35</td><td>3.22%</td>
+		</tr><tr align="right">
+			<td>Mar 2021</td><td>4,234.71</td><td>2.63%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2021</td><td>4,446.03</td><td>4.99%</td>
+		</tr><tr align="right">
+			<td>May 2021</td><td>4,689.36</td><td>5.47%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2021</td><td>4,153.07</td><td>-11.44%</td>
+		</tr><tr align="right">
+			<td>Jul 2021</td><td>4,463.10</td><td>7.47%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2021</td><td>4,819.64</td><td>7.99%</td>
+		</tr><tr align="right">
+			<td>Sep 2021</td><td>4,926.48</td><td>2.22%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2021</td><td>5,453.61</td><td>10.70%</td>
+		</tr><tr align="right">
+			<td>Nov 2021</td><td>5,596.43</td><td>2.62%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2021</td><td>5,359.95</td><td>-4.23%</td>
+		</tr><tr align="right">
+			<td>Jan 2022</td><td>5,633.44</td><td>5.10%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2022</td><td>6,375.34</td><td>13.17%</td>
+		</tr><tr align="right">
+			<td>Mar 2022</td><td>7,464.92</td><td>17.09%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2022</td><td>7,179.61</td><td>-3.82%</td>
+		</tr><tr align="right">
+			<td>May 2022</td><td>7,529.08</td><td>4.87%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2022</td><td>6,607.28</td><td>-12.24%</td>
+		</tr><tr align="right">
+			<td>Jul 2022</td><td>4,693.41</td><td>-28.97%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2022</td><td>4,581.75</td><td>-2.38%</td>
+		</tr><tr align="right">
+			<td>Sep 2022</td><td>4,135.06</td><td>-9.75%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2022</td><td>4,172.33</td><td>0.90%</td>
+		</tr><tr align="right">
+			<td>Nov 2022</td><td>4,385.82</td><td>5.12%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2022</td><td>4,149.54</td><td>-5.39%</td>
+		</tr><tr align="right">
+			<td>Jan 2023</td><td>4,078.68</td><td>-1.71%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2023</td><td>4,156.46</td><td>1.91%</td>
+		</tr><tr align="right">
+			<td>Mar 2023</td><td>4,343.73</td><td>4.51%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2023</td><td>4,445.87</td><td>2.35%</td>
+		</tr><tr align="right">
+			<td>May 2023</td><td>4,231.58</td><td>-4.82%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2023</td><td>3,787.36</td><td>-10.50%</td>
+		</tr><tr align="right">
+			<td>Jul 2023</td><td>4,030.93</td><td>6.43%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2023</td><td>3,966.68</td><td>-1.59%</td>
+		</tr><tr align="right">
+			<td>Sep 2023</td><td>3,882.53</td><td>-2.12%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2023</td><td>3,817.98</td><td>-1.66%</td>
+		</tr><tr align="right">
+			<td>Nov 2023</td><td>3,893.63</td><td>1.98%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2023</td><td>3,799.09</td><td>-2.43%</td>
+		</tr><tr align="right">
+			<td>Jan 2024</td><td>3,958.04</td><td>4.18%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2024</td><td>4,089.06</td><td>3.31%</td>
+		</tr><tr align="right">
+			<td>Mar 2024</td><td>4,446.15</td><td>8.73%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2024</td><td>4,460.55</td><td>0.32%</td>
+		</tr><tr align="right">
+			<td>May 2024</td><td>4,053.05</td><td>-9.14%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2024</td><td>4,114.93</td><td>1.53%</td>
+		</tr><tr align="right">
+			<td>Jul 2024</td><td>4,190.67</td><td>1.84%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Aug 2024</td><td>4,119.83</td><td>-1.69%</td>
+		</tr><tr align="right">
+			<td>Sep 2024</td><td>4,181.75</td><td>1.50%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Oct 2024</td><td>4,627.30</td><td>10.65%</td>
+		</tr><tr align="right">
+			<td>Nov 2024</td><td>5,186.14</td><td>12.08%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Dec 2024</td><td>5,301.35</td><td>2.22%</td>
+		</tr><tr align="right">
+			<td>Jan 2025</td><td>4,785.48</td><td>-9.73%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Feb 2025</td><td>4,741.38</td><td>-0.92%</td>
+		</tr><tr align="right">
+			<td>Mar 2025</td><td>4,735.71</td><td>-0.12%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Apr 2025</td><td>4,390.93</td><td>-7.28%</td>
+		</tr><tr align="right">
+			<td>May 2025</td><td>3,872.21</td><td>-11.81%</td>
+		</tr><tr align="right" style="background-color:#EFEFEF;">
+			<td>Jun 2025</td><td>3,967.92</td><td>2.47%</td>
+		</tr>
+	</table>
+</div>
