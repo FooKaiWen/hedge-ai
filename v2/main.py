@@ -7,70 +7,52 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
+import os
 
 # Step 1: Data Preparation
-# Assume you have a CSV file 'palm_oil_data.csv' with columns:
-# - date (datetime)
-# - spot_close (CPO spot price, daily - download historical from https://www.mpoc.org.my/market-insight/daily-palm-oil-prices/ or similar)
-# - fut_close (FCPO close price)
-# - volume (FCPO volume)
-# - next_day_pred (predicted next day FCPO close)
-# - next_month_pred (predicted next month FCPO close)
-# - production (monthly CPO production, interpolated to daily)
-# - oer (monthly OER rate, interpolated to daily)
-# - ffb_price (daily FFB price, NaN where not available)
+def load_split_data(data_dir='v2/data/rl_ready'):
+    """
+    Loads pre-split and preprocessed data for training, validation, and testing.
+    """
+    train_path = os.path.join(data_dir, 'train.csv')
+    val_path = os.path.join(data_dir, 'val.csv')
+    test_path = os.path.join(data_dir, 'test.csv')
 
-def load_and_preprocess_data(file_path='palm_oil_data.csv'):
-    df = pd.read_csv(file_path, parse_dates=['date'])
-    df = df.sort_values('date').reset_index(drop=True)
-    
-    # Interpolate monthly data to daily
-    df['production'] = df['production'].interpolate(method='linear').ffill().bfill()
-    df['oer'] = df['oer'].interpolate(method='linear').ffill().bfill()
-    
-    # Handle FFB price (limited period, fill NaN with mean)
-    df['ffb_price'] = df['ffb_price'].fillna(df['ffb_price'].mean())
-    
-    # Compute returns
-    df['spot_ret'] = np.log(df['spot_close'] / df['spot_close'].shift(1))
-    df['fut_ret'] = np.log(df['fut_close'] / df['fut_close'].shift(1))
-    
-    # Lagged returns
-    df['spot_ret_lag'] = df['spot_ret'].shift(1)
-    df['fut_ret_lag'] = df['fut_ret'].shift(1)
-    
-    # Rolling volatilities (20-day)
-    df['spot_vol'] = df['spot_ret'].rolling(window=20).std()
-    df['fut_vol'] = df['fut_ret'].rolling(window=20).std()
-    
-    # Expected returns from predictions
-    df['exp_day_ret'] = (df['next_day_pred'] - df['fut_close']) / df['fut_close']
-    df['exp_month_ret'] = (df['next_month_pred'] - df['fut_close']) / df['fut_close']
-    
-    # Normalize features
-    scaler = MinMaxScaler()
-    features_to_normalize = ['production', 'oer', 'ffb_price', 'spot_vol', 'fut_vol', 'volume']
-    df[features_to_normalize] = scaler.fit_transform(df[features_to_normalize])
-    
-    # Drop NaN rows
-    df = df.dropna().reset_index(drop=True)
-    
-    return df
+    df_train = pd.read_csv(train_path, parse_dates=['date'])
+    df_val = pd.read_csv(val_path, parse_dates=['date'])
+    df_test = pd.read_csv(test_path, parse_dates=['date'])
+
+    # Feature engineering for environment
+    for df in [df_train, df_val, df_test]:
+        df.sort_values('date', inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        # Lagged returns
+        df['spot_ret_lag'] = df['spot_ret'].shift(1)
+        df['fut_ret_lag'] = df['fut_ret'].shift(1)
+        # Expected returns from predictions
+        df['exp_day_ret'] = (df['next_day_pred'] - df['fut_close']) / df['fut_close']
+        df['exp_month_ret'] = (df['next_month_pred'] - df['fut_close']) / df['fut_close']
+        # Drop NaNs created by lagging
+        df.dropna(inplace=True)
+
+    return df_train, df_val, df_test
 
 # Step 2: Define Custom Gymnasium Environment for RL Hedging
 class HedgingEnv(gym.Env):
     def __init__(self, df, episode_length=30):
         super(HedgingEnv, self).__init__()
-        self.df = df
+        self.df = df.reset_index(drop=True)
         self.episode_length = episode_length
         self.max_steps = len(df) - episode_length - 1
+        
+        # Using a richer feature set from the rl_ready data
         self.features = [
-            'spot_ret_lag', 'fut_ret_lag', 'spot_vol', 'fut_vol',
+            'spot_ret_lag', 'fut_ret_lag', 'spot_std_20', 'fut_std_20',
             'production', 'oer', 'exp_day_ret', 'exp_month_ret',
-            'ffb_price', 'volume'  # Add more if needed
+            'ffb_price', 'volume_z', 'basis', 'hr_ols_60'
         ]
-        self.action_space = spaces.Box(low=0.0, high=2.0, shape=(1,), dtype=np.float32)  # Hedge ratio between 0 and 2
+        
+        self.action_space = spaces.Box(low=0.0, high=2.0, shape=(1,), dtype=np.float32)  # Hedge ratio
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.features),), dtype=np.float32)
     
     def reset(self, *, seed=None, options=None):
@@ -84,19 +66,24 @@ class HedgingEnv(gym.Env):
     def step(self, action):
         h = action[0]
         abs_step = self.start_step + self.current_step
+        
         spot_r = self.df['spot_ret'].iloc[abs_step]
         fut_r = self.df['fut_ret'].iloc[abs_step]
+        
         hedged_r = spot_r - h * fut_r
         self.hedged_returns.append(hedged_r)
         
         reward = 0.0
         self.current_step += 1
+        
         terminated = False
         truncated = self.current_step >= self.episode_length
+        
         if truncated:
+            # Reward is the negative variance of hedged returns for the episode
             reward = -np.var(self.hedged_returns)
         
-        obs = self._get_obs() if not truncated else np.zeros(self.observation_space.shape, dtype=np.float32)
+        obs = self._get_obs() if not (terminated or truncated) else np.zeros(self.observation_space.shape, dtype=np.float32)
         info = {}
         return obs, reward, terminated, truncated, info
     
@@ -105,11 +92,17 @@ class HedgingEnv(gym.Env):
         return self.df[self.features].iloc[abs_step].values.astype(np.float32)
 
 # Step 3: Agent Training
-def train_agent(df_train, model_path='ppo_hedging_model.zip'):
+def train_agent(df_train, df_val, model_path='v2/models/ppo_hedging_model.zip'):
     env_fn = lambda: HedgingEnv(df_train)
     env = DummyVecEnv([env_fn])
     
-    # Use PPO for continuous action space
+    # Evaluation callback using the validation set
+    eval_env_fn = lambda: HedgingEnv(df_val)
+    eval_env = DummyVecEnv([eval_env_fn])
+    eval_callback = EvalCallback(eval_env, best_model_save_path='./v2/logs/', 
+                                 log_path='./v2/logs/', eval_freq=10000, 
+                                 n_eval_episodes=10, deterministic=True, render=False)
+    
     model = PPO(
         'MlpPolicy', 
         env, 
@@ -119,14 +112,10 @@ def train_agent(df_train, model_path='ppo_hedging_model.zip'):
         n_epochs=10, 
         gamma=0.99, 
         gae_lambda=0.95, 
-        ent_coef=0.01  # Encourage exploration
+        ent_coef=0.01
     )
     
-    # Evaluation callback
-    eval_env = DummyVecEnv([env_fn])
-    eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/', log_path='./logs/', eval_freq=10000, n_eval_episodes=10, deterministic=True, render=False)
-    
-    model.learn(total_timesteps=100000, callback=eval_callback)  # Adjust timesteps as needed
+    model.learn(total_timesteps=100000, callback=eval_callback)
     model.save(model_path)
     return model
 
@@ -134,93 +123,120 @@ def train_agent(df_train, model_path='ppo_hedging_model.zip'):
 def evaluate_agent(model, df_test):
     env = HedgingEnv(df_test)
     obs, info = env.reset()
-    hedged_returns_rl = []
+    
     actions = []
-    terminated = False
-    truncated = False
+    terminated, truncated = False, False
     while not (terminated or truncated):
         action, _ = model.predict(obs, deterministic=True)
         obs, reward, terminated, truncated, info = env.step(action)
-        h = action[0]
-        actions.append(h)
-        # Collect hedged returns from env's list (since reward is terminal)
+        actions.append(action[0])
+        
     hedged_returns_rl = env.hedged_returns
-    
     var_hedged_rl = np.var(hedged_returns_rl)
-    var_unhedged = np.var(df_test['spot_ret'].iloc[env.start_step:env.start_step + env.episode_length])
+    
+    episode_slice = slice(env.start_step, env.start_step + env.episode_length)
+    var_unhedged = np.var(df_test['spot_ret'].iloc[episode_slice])
+    
     effectiveness_rl = 1 - (var_hedged_rl / var_unhedged) if var_unhedged != 0 else 0
     
-    return effectiveness_rl, var_hedged_rl, hedged_returns_rl, actions
+    return effectiveness_rl, var_hedged_rl, hedged_returns_rl, actions, env.start_step
 
 def compute_benchmarks(df_train, df_test, episode_start, episode_length):
+    episode_slice = slice(episode_start, episode_start + episode_length)
+    spot_rets = df_test['spot_ret'].iloc[episode_slice]
+    fut_rets = df_test['fut_ret'].iloc[episode_slice]
+
+    # Unhedged
+    var_unhedged = np.var(spot_rets)
+
     # Fixed ratio hedging (h=1)
-    spot_rets = df_test['spot_ret'].iloc[episode_start:episode_start + episode_length]
-    fut_rets = df_test['fut_ret'].iloc[episode_start:episode_start + episode_length]
     hedged_fixed = spot_rets - 1 * fut_rets
     var_fixed = np.var(hedged_fixed)
-    
+    effectiveness_fixed = 1 - (var_fixed / var_unhedged) if var_unhedged != 0 else 0
+
     # OLS/MVHR (static hedge ratio from train data)
+    X_train = df_train[['fut_ret']].dropna()
+    y_train = df_train['spot_ret'].loc[X_train.index]
     lr = LinearRegression()
-    lr.fit(df_train[['fut_ret']], df_train['spot_ret'])
+    lr.fit(X_train, y_train)
     h_ols = lr.coef_[0]
+    
     hedged_ols = spot_rets - h_ols * fut_rets
     var_ols = np.var(hedged_ols)
-    
-    var_unhedged = np.var(spot_rets)
-    effectiveness_fixed = 1 - (var_fixed / var_unhedged) if var_unhedged != 0 else 0
     effectiveness_ols = 1 - (var_ols / var_unhedged) if var_unhedged != 0 else 0
     
     return {
-        'fixed': {'effectiveness': effectiveness_fixed, 'var': var_fixed, 'h': 1},
-        'ols_mvhr': {'effectiveness': effectiveness_ols, 'var': var_ols, 'h': h_ols}
+        'unhedged': {'var': var_unhedged},
+        'fixed': {'effectiveness': effectiveness_fixed, 'var': var_fixed, 'h': 1, 'returns': hedged_fixed},
+        'ols_mvhr': {'effectiveness': effectiveness_ols, 'var': var_ols, 'h': h_ols, 'returns': hedged_ols}
     }
 
 # Step 5: Visualization
-def plot_results(hedged_rl, hedged_fixed, hedged_ols, actions):
-    fig, axs = plt.subplots(3, 1, figsize=(12, 18))
+def plot_results(hedged_rl, benchmarks, actions):
+    fig, axs = plt.subplots(3, 1, figsize=(14, 20), sharex=True)
     
-    axs[0].plot(hedged_rl, label='RL Hedged Returns')
-    axs[0].set_title('RL Hedged Returns')
+    axs[0].plot(hedged_rl, label=f'RL Hedged (Var: {np.var(hedged_rl):.6f})', color='blue')
+    axs[0].plot(benchmarks['fixed']['returns'].values, label=f"Fixed Ratio (h=1) (Var: {benchmarks['fixed']['var']:.6f})", color='orange', linestyle='--')
+    axs[0].plot(benchmarks['ols_mvhr']['returns'].values, label=f"OLS/MVHR (h={benchmarks['ols_mvhr']['h']:.2f}) (Var: {benchmarks['ols_mvhr']['var']:.6f})", color='green', linestyle='--')
+    axs[0].set_title('Cumulative Hedged Returns Comparison')
+    axs[0].set_ylabel('Cumulative Return')
     axs[0].legend()
     
-    axs[1].plot(hedged_fixed, label='Fixed Ratio Hedged Returns')
-    axs[1].plot(hedged_ols, label='OLS/MVHR Hedged Returns')
-    axs[1].set_title('Benchmark Hedged Returns')
+    axs[1].plot(np.cumsum(hedged_rl), label='RL Hedged', color='blue')
+    axs[1].plot(np.cumsum(benchmarks['fixed']['returns'].values), label='Fixed Ratio (h=1)', color='orange', linestyle='--')
+    axs[1].plot(np.cumsum(benchmarks['ols_mvhr']['returns'].values), label=f"OLS/MVHR (h={benchmarks['ols_mvhr']['h']:.2f})", color='green', linestyle='--')
+    axs[1].set_title('Cumulative Hedged Returns')
+    axs[1].set_ylabel('Cumulative Return')
     axs[1].legend()
-    
-    axs[2].plot(actions, label='RL Hedge Ratios')
+
+    axs[2].plot(actions, label='RL Hedge Ratio', color='purple', drawstyle='steps-post')
+    axs[2].axhline(y=benchmarks['ols_mvhr']['h'], color='green', linestyle='--', label=f"OLS/MVHR Ratio ({benchmarks['ols_mvhr']['h']:.2f})")
+    axs[2].axhline(y=1.0, color='orange', linestyle='--', label='Fixed Ratio (1.0)')
     axs[2].set_title('Dynamic Hedge Ratios from RL Agent')
+    axs[2].set_xlabel('Time Step in Episode')
+    axs[2].set_ylabel('Hedge Ratio')
     axs[2].legend()
     
     plt.tight_layout()
-    plt.savefig('hedging_results.png')
+    plt.savefig('v2/hedging_results.png')
     plt.show()
 
 # End-to-End Pipeline
 if __name__ == "__main__":
-    # Load and preprocess data
-    df = load_and_preprocess_data()
-    
-    # Split into train/test (80/20)
-    split_idx = int(0.8 * len(df))
-    df_train = df.iloc[:split_idx]
-    df_test = df.iloc[split_idx:]
+    # Create directories if they don't exist
+    os.makedirs('v2/models', exist_ok=True)
+    os.makedirs('v2/logs', exist_ok=True)
+
+    # Load pre-split data
+    df_train, df_val, df_test = load_split_data(data_dir='v2/data/rl_ready')
     
     # Train the agent
-    model = train_agent(df_train)
+    model = train_agent(df_train, df_val, model_path='v2/models/ppo_hedging_model.zip')
     
-    # Evaluate on a sample episode from test
-    effectiveness_rl, var_rl, hedged_rl, actions = evaluate_agent(model, df_test)
+    # Evaluate on the test set
+    effectiveness_rl, var_rl, hedged_rl, actions, start_step = evaluate_agent(model, df_test)
     
-    # For benchmarks, use the same episode start as in eval
-    benchmarks = compute_benchmarks(df_train, df_test, 0, 30)  # Assuming episode start=0 for simplicity; adjust as needed
+    # Compute benchmarks for the same episode
+    benchmarks = compute_benchmarks(df_train, df_test, start_step, len(hedged_rl))
     
     # Print results
-    print(f"RL Effectiveness: {effectiveness_rl:.4f}, Variance: {var_rl:.6f}")
-    print(f"Fixed Ratio Effectiveness: {benchmarks['fixed']['effectiveness']:.4f}, Variance: {benchmarks['fixed']['var']:.6f}, h: {benchmarks['fixed']['h']}")
-    print(f"OLS/MVHR Effectiveness: {benchmarks['ols_mvhr']['effectiveness']:.4f}, Variance: {benchmarks['ols_mvhr']['var']:.6f}, h: {benchmarks['ols_mvhr']['h']:.4f}")
+    print("\n--- Hedging Performance Evaluation ---")
+    print(f"Test Episode Start Step: {start_step}")
+    print("-" * 35)
+    print(f"Unhedged Portfolio Variance: {benchmarks['unhedged']['var']:.6f}")
+    print("-" * 35)
+    print("RL Agent:")
+    print(f"  - Variance: {var_rl:.6f}")
+    print(f"  - Effectiveness (VRE): {effectiveness_rl:.4f}")
+    print("-" * 35)
+    print("Benchmark - Fixed Ratio (h=1):")
+    print(f"  - Variance: {benchmarks['fixed']['var']:.6f}")
+    print(f"  - Effectiveness (VRE): {benchmarks['fixed']['effectiveness']:.4f}")
+    print("-" * 35)
+    print(f"Benchmark - OLS/MVHR (h={benchmarks['ols_mvhr']['h']:.4f}):")
+    print(f"  - Variance: {benchmarks['ols_mvhr']['var']:.6f}")
+    print(f"  - Effectiveness (VRE): {benchmarks['ols_mvhr']['effectiveness']:.4f}")
+    print("-" * 35)
     
-    # Plot
-    hedged_fixed = df_test['spot_ret'].iloc[0:30] - 1 * df_test['fut_ret'].iloc[0:30]
-    hedged_ols = df_test['spot_ret'].iloc[0:30] - benchmarks['ols_mvhr']['h'] * df_test['fut_ret'].iloc[0:30]
-    plot_results(hedged_rl, hedged_fixed, hedged_ols, actions)
+    # Plot results
+    plot_results(hedged_rl, benchmarks, actions)
