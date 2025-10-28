@@ -4,7 +4,7 @@ This document outlines three distinct strategic plans to improve the performance
 
 ---
 
-### Plan A: Reward Shaping and Increased Training
+### Plan A: Reward Shaping and Increased Training (DONE)
 
 **Objective:** To provide the agent with a more immediate and consistent learning signal, and to allow more time for convergence. The current reward is sparse (given only at the end of an episode), which can make learning difficult.
 

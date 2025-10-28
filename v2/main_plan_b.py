@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
-from stable_baselines3 import SAC
+from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
 from sklearn.linear_model import LinearRegression
@@ -45,10 +45,11 @@ class HedgingEnv(gym.Env):
         self.episode_length = episode_length
         self.max_steps = len(df) - episode_length - 1
         
-        # Plan C: Using a refined feature set
+        # Using a richer feature set from the rl_ready data
         self.features = [
             'spot_ret_lag', 'fut_ret_lag', 'spot_std_20', 'fut_std_20',
-            'basis', 'volume_z', 'hr_ols_60'
+            'production', 'oer', 'exp_day_ret', 'exp_month_ret',
+            'ffb_price', 'volume_z', 'basis', 'hr_ols_60'
         ]
         
         self.action_space = spaces.Box(low=0.0, high=2.0, shape=(1,), dtype=np.float32)  # Hedge ratio
@@ -88,7 +89,7 @@ class HedgingEnv(gym.Env):
         return self.df[self.features].iloc[abs_step].values.astype(np.float32)
 
 # Step 3: Agent Training
-def train_agent(df_train, df_val, model_path='models/sac_hedging_model.zip'):
+def train_agent(df_train, df_val, model_path='models/ppo_hedging_model.zip'):
     env_fn = lambda: HedgingEnv(df_train)
     env = DummyVecEnv([env_fn])
     
@@ -99,12 +100,22 @@ def train_agent(df_train, df_val, model_path='models/sac_hedging_model.zip'):
                                  log_path='./logs/', eval_freq=10000, 
                                  n_eval_episodes=10, deterministic=True, render=False)
     
-    # Plan C: Using Soft Actor-Critic (SAC)
-    model = SAC(
+    # Best hyperparameters from Optuna study (Plan B)
+    best_params = {
+        'learning_rate': 0.00033981248109550647,
+        'n_steps': 512,
+        'gamma': 0.9916272998846116,
+        'ent_coef': 0.07977898708632085,
+        'gae_lambda': 0.9148265044353232,
+        'batch_size': 64,
+        'n_epochs': 6
+    }
+
+    model = PPO(
         'MlpPolicy', 
         env, 
-        verbose=1
-        # Using default SAC hyperparameters
+        verbose=1, 
+        **best_params
     )
     
     model.learn(total_timesteps=300000, callback=eval_callback)
@@ -203,7 +214,7 @@ if __name__ == "__main__":
     df_train, df_val, df_test = load_split_data(data_dir='data/rl_ready')
     
     # Train the agent
-    model = train_agent(df_train, df_val, model_path='models/sac_hedging_model.zip')
+    model = train_agent(df_train, df_val, model_path='models/ppo_hedging_model.zip')
     
     # Evaluate on the test set
     effectiveness_rl, var_rl, hedged_rl, actions, start_step = evaluate_agent(model, df_test)
