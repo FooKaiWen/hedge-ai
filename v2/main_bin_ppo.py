@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
-from stable_baselines3 import DQN # CHANGED
+from stable_baselines3 import PPO # CHANGED
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
 from sklearn.linear_model import LinearRegression
@@ -96,7 +96,7 @@ class HedgingEnv(gym.Env):
         return self.df[self.features].iloc[abs_step].values.astype(np.float32)
 
 # Step 3: Agent Training
-def train_agent(df_train, df_val, model_path='models/dqn_hedging_model.zip'):
+def train_agent(df_train, df_val, model_path='models/ppo_hedging_model.zip'):
     env_fn = lambda: HedgingEnv(df_train)
     env = DummyVecEnv([env_fn])
     
@@ -107,8 +107,8 @@ def train_agent(df_train, df_val, model_path='models/dqn_hedging_model.zip'):
                                  log_path='./logs/', eval_freq=5000, 
                                  n_eval_episodes=10, deterministic=True, render=False)
     
-    # CHANGED: Use DQN agent
-    model = DQN(
+    # CHANGED: Use PPO agent
+    model = PPO(
         'MlpPolicy', 
         env, 
         verbose=1
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     df_train, df_val, df_test = load_split_data(data_dir='data/rl_ready')
     
     # Train the agent
-    model_path = 'models/dqn_hedging_model.zip' # CHANGED
+    model_path = 'models/ppo_hedging_model.zip' # CHANGED
     model = train_agent(df_train, df_val, model_path=model_path)
     
     # Plot learning curve
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     print("-" * 35)
     print(f"Unhedged Portfolio Variance: {benchmarks['unhedged']['var']:.6f}")
     print("-" * 35)
-    print("RL Agent (DQN):") # CHANGED
+    print("RL Agent (PPO):") # CHANGED
     print(f"  - Variance: {var_rl:.6f}")
     print(f"  - Effectiveness (VRE): {effectiveness_rl:.4f}")
     print("-" * 35)

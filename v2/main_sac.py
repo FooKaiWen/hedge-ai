@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
-from stable_baselines3 import DQN # CHANGED
+from stable_baselines3 import SAC
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
 from sklearn.linear_model import LinearRegression
@@ -45,15 +45,14 @@ class HedgingEnv(gym.Env):
         self.episode_length = episode_length
         self.max_steps = len(df) - episode_length - 1
         
+        # Plan C: Using a refined feature set
         self.features = [
             'spot_ret_lag', 'fut_ret_lag', 'spot_std_20', 'fut_std_20',
             'basis', 'volume_z', 'hr_ols_60'
         ]
         
-        # CHANGED: Discrete action space with 11 bins
-        self.action_space = spaces.Discrete(11)
+        self.action_space = spaces.Box(low=0.0, high=2.0, shape=(1,), dtype=np.float32)  # Hedge ratio
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(len(self.features),), dtype=np.float32)
-        self.last_hedge_ratio = 0
     
     def reset(self, *, seed=None, options=None):
         if seed is not None:
@@ -64,14 +63,7 @@ class HedgingEnv(gym.Env):
         return self._get_obs(), {}
     
     def step(self, action):
-        # Handle both vectorized and non-vectorized envs
-        if isinstance(action, np.ndarray):
-            action = action.flatten()[0]
-
-        # CHANGED: Map discrete action to continuous hedge ratio
-        h = float(action) * 0.2
-        self.last_hedge_ratio = h
-        
+        h = action[0]
         abs_step = self.start_step + self.current_step
         
         spot_r = self.df['spot_ret'].iloc[abs_step]
@@ -96,7 +88,7 @@ class HedgingEnv(gym.Env):
         return self.df[self.features].iloc[abs_step].values.astype(np.float32)
 
 # Step 3: Agent Training
-def train_agent(df_train, df_val, model_path='models/dqn_hedging_model.zip'):
+def train_agent(df_train, df_val, model_path='models/sac_hedging_model.zip'):
     env_fn = lambda: HedgingEnv(df_train)
     env = DummyVecEnv([env_fn])
     
@@ -104,18 +96,18 @@ def train_agent(df_train, df_val, model_path='models/dqn_hedging_model.zip'):
     eval_env_fn = lambda: HedgingEnv(df_val)
     eval_env = DummyVecEnv([eval_env_fn])
     eval_callback = EvalCallback(eval_env, best_model_save_path='./logs/', 
-                                 log_path='./logs/', eval_freq=5000, 
+                                 log_path='./logs/', eval_freq=10000, 
                                  n_eval_episodes=10, deterministic=True, render=False)
     
-    # CHANGED: Use DQN agent
-    model = DQN(
+    # Plan C: Using Soft Actor-Critic (SAC)
+    model = SAC(
         'MlpPolicy', 
         env, 
         verbose=1
+        # Using default SAC hyperparameters
     )
     
-    # CHANGED: Train for ~2000 episodes (2000 * 30 = 60000 steps)
-    model.learn(total_timesteps=60000, callback=eval_callback)
+    model.learn(total_timesteps=300000, callback=eval_callback)
     model.save(model_path)
     return model
 
@@ -129,7 +121,7 @@ def evaluate_agent(model, df_test):
     while not (terminated or truncated):
         action, _ = model.predict(obs, deterministic=True)
         obs, reward, terminated, truncated, info = env.step(action)
-        actions.append(env.last_hedge_ratio)
+        actions.append(action[0])
         
     hedged_returns_rl = env.hedged_returns
     var_hedged_rl = np.var(hedged_returns_rl)
@@ -201,27 +193,6 @@ def plot_results(hedged_rl, benchmarks, actions):
     plt.savefig('logs/hedging_results.png')
     plt.show()
 
-# NEW: Function to plot learning curve
-def plot_learning_curve(log_dir='logs'):
-    eval_path = os.path.join(log_dir, 'evaluations.npz')
-    if not os.path.exists(eval_path):
-        print("Evaluation log file not found. Skipping learning curve plot.")
-        return
-
-    data = np.load(eval_path)
-    timesteps = data['timesteps']
-    results = data['results']
-
-    plt.figure(figsize=(12, 6))
-    plt.plot(timesteps, results)
-    plt.title('Learning Curve')
-    plt.xlabel('Timesteps')
-    plt.ylabel('Mean Reward')
-    plt.grid(True)
-    plt.savefig(os.path.join(log_dir, 'learning_curve.png'))
-    plt.show()
-
-
 # End-to-End Pipeline
 if __name__ == "__main__":
     # Create directories if they don't exist
@@ -232,12 +203,8 @@ if __name__ == "__main__":
     df_train, df_val, df_test = load_split_data(data_dir='data/rl_ready')
     
     # Train the agent
-    model_path = 'models/dqn_hedging_model.zip' # CHANGED
-    model = train_agent(df_train, df_val, model_path=model_path)
+    model = train_agent(df_train, df_val, model_path='models/sac_hedging_model.zip')
     
-    # Plot learning curve
-    plot_learning_curve() # NEW
-
     # Evaluate on the test set
     effectiveness_rl, var_rl, hedged_rl, actions, start_step = evaluate_agent(model, df_test)
     
@@ -250,7 +217,7 @@ if __name__ == "__main__":
     print("-" * 35)
     print(f"Unhedged Portfolio Variance: {benchmarks['unhedged']['var']:.6f}")
     print("-" * 35)
-    print("RL Agent (DQN):") # CHANGED
+    print("RL Agent:")
     print(f"  - Variance: {var_rl:.6f}")
     print(f"  - Effectiveness (VRE): {effectiveness_rl:.4f}")
     print("-" * 35)
