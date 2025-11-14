@@ -160,9 +160,9 @@ def main():
     print(f"Using {len(features)} features for the agent's state.")
     
     # --- Save features for consistent evaluation ---
-    with open('v3/models/features.json', 'w') as f:
+    with open('v3/models/features_profit_maximization.json', 'w') as f:
         json.dump(features, f)
-    print("Saved feature list to v3/models/features.json")
+    print("Saved feature list to v3/models/features_profit_maximization.json")
 
     # --- Train/Test Split ---
     train_size = int(len(full_df) * 0.8)
@@ -179,11 +179,11 @@ def main():
 
 
     # --- Agent Training ---
-    model_path = 'v3/models/ppo_hedge_v3.zip'
-    vec_norm_path = 'v3/models/vec_normalize_v3.pkl'
+    model_path = 'v3/models/ppo_hedge_profit_maximization.zip'
+    vec_norm_path = 'v3/models/vec_normalize_profit_maximization.pkl'
     
-    eval_callback = EvalCallback(eval_env, best_model_save_path='v3/logs/best_model',
-                                 log_path='v3/logs/results', eval_freq=10000,
+    eval_callback = EvalCallback(eval_env, best_model_save_path='v3/logs/best_model_profit_maximization',
+                                 log_path='v3/logs/results/profit_maximization', eval_freq=10000,
                                  n_eval_episodes=20, deterministic=True)
 
     # PPO is a great choice for this continuous control problem
@@ -197,7 +197,7 @@ def main():
         gamma=0.99,
         gae_lambda=0.95,
         ent_coef=0.02,  # Increased for more exploration
-        tensorboard_log="v3/logs/tensorboard/"
+        tensorboard_log="v3/logs/tensorboard_profit_maximization/"
     )
     
     print("\n--- Starting Agent Training ---")
@@ -252,8 +252,8 @@ def main():
     axs[1].legend()
     
     plt.tight_layout()
-    plt.savefig('v3/logs/v3_evaluation_results.png')
-    print("\n--- Evaluation complete. Results plot saved to v3/logs/v3_evaluation_results.png ---")
+    plt.savefig('v3/logs/v3_profit_maximization_evaluation_results.png')
+    print("\n--- Evaluation complete. Results plot saved to v3/logs/v3_profit_maximization_evaluation_results.png ---")
     plt.show()
 
 
