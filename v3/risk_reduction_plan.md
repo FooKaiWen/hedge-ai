@@ -55,3 +55,50 @@ Clear and distinct naming conventions will be used to manage all files associate
     -   Evaluation plot: `v3_risk_reduction_comparison.png`
 
 This detailed plan ensures a structured and methodologically sound approach to developing an RL agent that is an expert in risk reduction.
+
+---
+
+## Phase 1: Variance Minimization - Results
+
+The **Primary Approach (Variance Minimization)** was implemented and tested. The agent was trained to maximize the negative squared hedged return.
+
+### Final Metrics:
+
+| Strategy        |          VRE |     Variance |    Sharpe Ratio |   Cumulative PnL |
+|:----------------|-------------:|-------------:|----------------:|-----------------:|
+| RL Agent        |      -0.0245 |     0.000009 |         -0.4463 |          -0.1198 |
+| No Hedge        |       0.0000 |     0.000008 |         -0.3121 |          -0.0828 |
+| Full Hedge      |     -25.2882 |     0.000222 |         -0.1907 |          -0.2594 |
+| OLS Hedge       |       0.0002 |     0.000008 |         -0.3270 |          -0.0867 |
+
+### Findings:
+
+The experiment was **not successful**.
+
+1.  **Failure to Reduce Risk:** The agent's primary goal was to reduce variance. However, it achieved a negative VRE (`-0.0245`), meaning it slightly increased risk compared to taking no hedge at all. It was significantly outperformed by the simple OLS/MVHR statistical model, which achieved the lowest variance.
+2.  **Poor Performance:** The agent also failed on secondary metrics, delivering a worse PnL and Sharpe Ratio than both the No Hedge and OLS Hedge strategies.
+3.  **Strategic Insight:** A pure variance-minimization reward signal (`-pnl^2`) appears to be insufficient or too noisy for the agent to learn an effective policy. It struggles to beat a simple, global statistical benchmark like OLS.
+
+---
+
+## Phase 2: Utility Maximization - Next Steps
+
+Based on the failure of the pure variance minimization approach, the next logical step is to implement the **Secondary Approach (Utility Maximization)** outlined in the initial plan. This provides a more balanced and potentially more stable reward signal for the agent to learn from.
+
+### 1. Implement Utility Function Reward
+
+- **Action:** Modify the `step` function in `v3/main_risk_reduction.py` to use the utility function.
+- **New Reward Formula:** `reward = pnl - (0.5 * risk_aversion * pnl**2)`
+- **Details:**
+    - A `risk_aversion` parameter (e.g., starting at `1.0`) will be added to the environment's `__init__` method.
+    - This formula explicitly tells the agent to find a balance between making a profit (`pnl`) and avoiding large swings in returns (the `pnl**2` penalty). This is a more nuanced objective and is a standard in modern portfolio theory.
+
+### 2. Re-Train and Evaluate
+
+- **Action:** Execute the modified `main_risk_reduction.py` script to train a new agent based on this utility function.
+- **Details:** The existing training pipeline, including hyperparameters and timesteps, will be used for the initial run.
+
+### 3. Compare and Analyze
+
+- **Action:** Execute the `compare_risk_reduction.py` script on the new model.
+- **Objective:** To determine if the utility-based agent can successfully reduce variance (achieve a positive VRE) while maintaining a reasonable Sharpe Ratio, and to see if it can finally outperform the OLS/MVHR benchmark.
