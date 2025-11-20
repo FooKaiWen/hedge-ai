@@ -136,9 +136,9 @@ def main():
         df_test = df_full.iloc[train_size:].reset_index(drop=True)
 
         # Using the specific model paths for the profit maximization agent
-        model_path = os.path.join(base_path, 'models', 'ppo_hedge_profit_maximization.zip')
-        vec_norm_path = os.path.join(base_path, 'models', 'vec_normalize_profit_maximization.pkl')
-        features_path = os.path.join(base_path, 'models', 'features_profit_maximization.json')
+        model_path = os.path.join(base_path, 'models', 'ppo_hedge_profit_maximization_20251118_223523.zip')
+        vec_norm_path = os.path.join(base_path, 'models', 'vec_normalize_profit_maximization_20251118_223523.pkl')
+        features_path = os.path.join(base_path, 'models', 'features_profit_maximization_20251118_223523.json')
 
         model = PPO.load(model_path)
         with open(features_path, 'r') as f:

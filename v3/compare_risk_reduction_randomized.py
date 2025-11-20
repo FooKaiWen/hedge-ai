@@ -64,9 +64,9 @@ def main():
     train_size = int(len(df_full) * 0.8)
     df_test = df_full.iloc[train_size:].reset_index(drop=True)
 
-    model_path = 'v3/models/ppo_hedge_risk_reduction.zip'
-    vec_norm_path = 'v3/models/vec_normalize_risk_reduction.pkl'
-    features_path = 'v3/models/features_risk_reduction.json'
+    model_path = 'v3/models/ppo_hedge_risk_reduction_20251118_223523.zip'
+    vec_norm_path = 'v3/models/vec_normalize_risk_reduction_20251118_223523.pkl'
+    features_path = 'v3/models/features_risk_reduction_20251118_223523.json'
 
     if not all(os.path.exists(p) for p in [model_path, vec_norm_path, features_path]):
         print("Error: Model, normalization stats, or features file not found.")

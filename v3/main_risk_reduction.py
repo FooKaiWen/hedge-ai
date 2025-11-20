@@ -8,6 +8,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 import matplotlib.pyplot as plt
 import os
 import json
+from datetime import datetime
 
 # ==============================================================================
 # 1. DATA LOADING & PREPARATION
@@ -153,14 +154,17 @@ def main():
     # This is a sample list, adjust it to match your notebook's final feature set
     features = [col for col in full_df.columns if col not in [
         'date', 'spot_close', 'fut_close', 'next_day_pred', 'next_month_pred', 
-        'hedge_ratio_target', 'target_hr', 'target_dhr' # Exclude targets and identifiers
+        'hedge_ratio_target', 'target_hr', 'target_dhr', 'hr_now' # Exclude targets and identifiers
     ]]
     # Ensure all selected features are numeric
     features = [f for f in features if pd.api.types.is_numeric_dtype(full_df[f])]
     print(f"Using {len(features)} features for the agent's state.")
     
+    # --- Generate unique filename for this training run ---
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     # --- Save features for consistent evaluation ---
-    features_path = 'v3/models/features_risk_reduction.json'
+    features_path = f'v3/models/features_risk_reduction_{timestamp}.json'
     with open(features_path, 'w') as f:
         json.dump(features, f)
     print(f"Saved feature list to {features_path}")
@@ -180,8 +184,8 @@ def main():
 
 
     # --- Agent Training ---
-    model_path = 'v3/models/ppo_hedge_risk_reduction.zip'
-    vec_norm_path = 'v3/models/vec_normalize_risk_reduction.pkl'
+    model_path = f'v3/models/ppo_hedge_risk_reduction_{timestamp}.zip'
+    vec_norm_path = f'v3/models/vec_normalize_risk_reduction_{timestamp}.pkl'
     
     eval_callback = EvalCallback(eval_env, best_model_save_path='v3/logs/best_model_risk_reduction',
                                  log_path='v3/logs/results_risk_reduction', eval_freq=10000,

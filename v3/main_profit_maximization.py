@@ -8,6 +8,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 import matplotlib.pyplot as plt
 import os
 import json
+from datetime import datetime
 
 # ==============================================================================
 # 1. DATA LOADING & PREPARATION
@@ -153,16 +154,20 @@ def main():
     # This is a sample list, adjust it to match your notebook's final feature set
     features = [col for col in full_df.columns if col not in [
         'date', 'spot_close', 'fut_close', 'next_day_pred', 'next_month_pred', 
-        'hedge_ratio_target', 'target_hr', 'target_dhr' # Exclude targets and identifiers
+        'hedge_ratio_target', 'target_hr', 'target_dhr', 'hr_now' # Exclude targets and identifiers
     ]]
     # Ensure all selected features are numeric
     features = [f for f in features if pd.api.types.is_numeric_dtype(full_df[f])]
     print(f"Using {len(features)} features for the agent's state.")
     
+    # --- Generate unique filename for this training run ---
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
     # --- Save features for consistent evaluation ---
-    with open('v3/models/features_profit_maximization.json', 'w') as f:
+    features_path = f'v3/models/features_profit_maximization_{timestamp}.json'
+    with open(features_path, 'w') as f:
         json.dump(features, f)
-    print("Saved feature list to v3/models/features_profit_maximization.json")
+    print(f"Saved feature list to {features_path}")
 
     # --- Train/Test Split ---
     train_size = int(len(full_df) * 0.8)
@@ -179,8 +184,8 @@ def main():
 
 
     # --- Agent Training ---
-    model_path = 'v3/models/ppo_hedge_profit_maximization.zip'
-    vec_norm_path = 'v3/models/vec_normalize_profit_maximization.pkl'
+    model_path = f'v3/models/ppo_hedge_profit_maximization_{timestamp}.zip'
+    vec_norm_path = f'v3/models/vec_normalize_profit_maximization_{timestamp}.pkl'
     
     eval_callback = EvalCallback(eval_env, best_model_save_path='v3/logs/best_model_profit_maximization',
                                  log_path='v3/logs/results/profit_maximization', eval_freq=10000,
