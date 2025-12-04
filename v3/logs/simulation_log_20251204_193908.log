@@ -1,0 +1,87 @@
+2025-12-04 19:39:08,864 - INFO - --- Starting Agentic DSS Simulation (with Iterative Debate and Detailed Logging) ---
+2025-12-04 19:39:09,006 - INFO - Loading model for Cost Control...
+2025-12-04 19:39:11,489 - INFO - Loading model for Profit Maximization...
+2025-12-04 19:39:11,502 - INFO - Loading model for Risk Reduction...
+2025-12-04 19:39:11,532 - INFO - 
+--- Running simulation for 1450 time steps ---
+2025-12-04 19:39:11,533 - INFO - 
+==================== Timestep 1/1450 ====================
+2025-12-04 19:39:11,537 - DEBUG - Generating proposal for Cost Control with initial ratio 0.00
+2025-12-04 19:39:11,538 - DEBUG - Prompt for Cost Control:
+
+    You are an expert financial agent with the persona of a 'Cost Control'.
+    Your task is to provide a brief, one-sentence rationale for a hedging decision.
+    
+    Current Market View:
+    - CPO Spot Price: 4762.13
+    - FCPO Futures Price: 4333.00
+    - FCPO Next Day Prediction: 3972.00
+    - FCPO Next Month Prediction: 4298.00
+    - 20-day Spot Volatility (Std Dev): 68.04
+    - Volatility Regime: 0
+    - Basis Percentage (Spot-Futures): -0.09%
+    
+    Based on your persona, you have decided on a hedge ratio of: 0.00
+    
+    Provide a concise, single-sentence justification for this decision, starting with 'As the Cost Control, ...'.
+    
+    Example for Profit Maximization: "As the Profit Maximization agent, I recommend an aggressive hedge to capitalize on expected price movements."
+    Example for Risk Reduction: "As the Risk Reduction agent, the high volatility necessitates a strong hedge to protect our position."
+    Example for Cost Control: "As the Cost Control agent, I advise a minimal change to our current hedge to reduce transaction costs."
+
+    Justification:
+    
+2025-12-04 19:39:21,546 - DEBUG - LLM Rationale for Cost Control: 'As the Cost Control, I advise no hedging to benefit from the predicted decline in future prices and avoid associated transaction costs.'
+2025-12-04 19:39:21,550 - DEBUG - Generating proposal for Profit Maximization with initial ratio 0.10
+2025-12-04 19:39:21,550 - DEBUG - Prompt for Profit Maximization:
+
+    You are an expert financial agent with the persona of a 'Profit Maximization'.
+    Your task is to provide a brief, one-sentence rationale for a hedging decision.
+    
+    Current Market View:
+    - CPO Spot Price: 4762.13
+    - FCPO Futures Price: 4333.00
+    - FCPO Next Day Prediction: 3972.00
+    - FCPO Next Month Prediction: 4298.00
+    - 20-day Spot Volatility (Std Dev): 68.04
+    - Volatility Regime: 0
+    - Basis Percentage (Spot-Futures): -0.09%
+    
+    Based on your persona, you have decided on a hedge ratio of: 0.10
+    
+    Provide a concise, single-sentence justification for this decision, starting with 'As the Profit Maximization, ...'.
+    
+    Example for Profit Maximization: "As the Profit Maximization agent, I recommend an aggressive hedge to capitalize on expected price movements."
+    Example for Risk Reduction: "As the Risk Reduction agent, the high volatility necessitates a strong hedge to protect our position."
+    Example for Cost Control: "As the Cost Control agent, I advise a minimal change to our current hedge to reduce transaction costs."
+
+    Justification:
+    
+2025-12-04 19:39:32,332 - DEBUG - LLM Rationale for Profit Maximization: 'As the Profit Maximization agent, the minimal hedge ratio of 0.10 is chosen to maximize exposure and capitalize on the anticipated price rebound following the projected short-term dip.'
+2025-12-04 19:39:32,340 - DEBUG - Generating proposal for Risk Reduction with initial ratio 0.89
+2025-12-04 19:39:32,340 - DEBUG - Prompt for Risk Reduction:
+
+    You are an expert financial agent with the persona of a 'Risk Reduction'.
+    Your task is to provide a brief, one-sentence rationale for a hedging decision.
+    
+    Current Market View:
+    - CPO Spot Price: 4762.13
+    - FCPO Futures Price: 4333.00
+    - FCPO Next Day Prediction: 3972.00
+    - FCPO Next Month Prediction: 4298.00
+    - 20-day Spot Volatility (Std Dev): 68.04
+    - Volatility Regime: 0
+    - Basis Percentage (Spot-Futures): -0.09%
+    
+    Based on your persona, you have decided on a hedge ratio of: 0.89
+    
+    Provide a concise, single-sentence justification for this decision, starting with 'As the Risk Reduction, ...'.
+    
+    Example for Profit Maximization: "As the Profit Maximization agent, I recommend an aggressive hedge to capitalize on expected price movements."
+    Example for Risk Reduction: "As the Risk Reduction agent, the high volatility necessitates a strong hedge to protect our position."
+    Example for Cost Control: "As the Cost Control agent, I advise a minimal change to our current hedge to reduce transaction costs."
+
+    Justification:
+    
+2025-12-04 19:39:40,023 - DEBUG - LLM Rationale for Risk Reduction: 'As the Risk Reduction, the substantial predicted next-day price decline for FCPO necessitates this 0.89 hedge to robustly protect against significant downside exposure.'
+2025-12-04 19:39:40,023 - INFO - --- Initiating Debate for Timestep 1 ---
