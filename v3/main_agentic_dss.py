@@ -17,8 +17,10 @@ MODEL="gemini-2.5-flash"
 
 # --- LLM Integration Setup ---
 try:
-    # Attempt to get the API key from an environment variable
-    api_key = "AIzaSyBwiRtCXpJZkk2BeP4LPgdHJHGr2hDY404" # os.environ['GOOGLE_API_KEY']
+    # Get the API key from an environment variable
+    api_key = "AIzaSyBoX8ususrzHouOdjR4Nx5G7aYDF5960vw" # os.environ.get('GOOGLE_API_KEY')
+    if not api_key:
+        raise KeyError("GOOGLE_API_KEY not found")
     LLM_MODEL = genai.Client(api_key=api_key)
     print("Successfully configured Gemini API.")
 except (AttributeError, KeyError):
@@ -405,17 +407,43 @@ def main():
 
     all_strategies = ['Agentic DSS'] + list(agents_to_load.keys()) + ['Static (Ratio=1.0)', 'No Hedge (Ratio=0.0)']
 
-    # --- 2. Initialize Simulation State ---
-    simulation_results = {name: {'pnls': [], 'costs': [], 'hedge_ratios': [], 'entropies': []} for name in all_strategies}
-    simulation_results['Agentic DSS']['rationales'] = [] # For storing CIO reasoning
-    current_hedge_ratios = {name: 0.0 for name in all_strategies}
+    # --- 2. Initialize Simulation State with Checkpoint Support ---
+    checkpoint_path = os.path.join('v3/data', 'simulation_checkpoint.json')
+    decision_history_path = os.path.join('v3/data', 'decision_history.json')
+    
+    # Check for existing checkpoint
+    start_timestep = 0
+    if os.path.exists(checkpoint_path):
+        try:
+            with open(checkpoint_path, 'r') as f:
+                checkpoint = json.load(f)
+            start_timestep = checkpoint['last_completed_timestep'] + 1
+            simulation_results = checkpoint['simulation_results']
+            current_hedge_ratios = checkpoint['current_hedge_ratios']
+            decision_history = checkpoint['decision_history']
+            logger.info(f"\n✅ Checkpoint found! Resuming from timestep {start_timestep + 1}...")
+            logger.info(f"   Already completed: {start_timestep} timesteps")
+        except Exception as e:
+            logger.warning(f"Failed to load checkpoint: {e}. Starting fresh.")
+            start_timestep = 0
+            simulation_results = {name: {'pnls': [], 'costs': [], 'hedge_ratios': [], 'entropies': []} for name in all_strategies}
+            simulation_results['Agentic DSS']['rationales'] = []
+            current_hedge_ratios = {name: 0.0 for name in all_strategies}
+            decision_history = []
+    else:
+        simulation_results = {name: {'pnls': [], 'costs': [], 'hedge_ratios': [], 'entropies': []} for name in all_strategies}
+        simulation_results['Agentic DSS']['rationales'] = []
+        current_hedge_ratios = {name: 0.0 for name in all_strategies}
+        decision_history = []
+    
     transaction_cost = 0.0005
 
     # --- 3. Run Day-by-Day Simulation Loop ---
     eval_period_len = len(df_test) - 1
-    logger.info(f"\n--- Running simulation for {eval_period_len} time steps ---")
+    remaining_steps = eval_period_len - start_timestep
+    logger.info(f"\n--- Running simulation for {remaining_steps} remaining time steps (total: {eval_period_len}) ---")
 
-    for i in range(eval_period_len):
+    for i in range(start_timestep, eval_period_len):
         logger.info(f"\n{'='*20} Timestep {i+1}/{eval_period_len} {'='*20}")
         spot_return = df_test['spot_ret'].iloc[i]
         futures_return = df_test['fut_ret'].iloc[i]
@@ -477,6 +505,69 @@ def main():
         simulation_results['Agentic DSS']['entropies'].append(0) # Entropy not applicable
         simulation_results['Agentic DSS']['rationales'].append(cio_rationale)
         current_hedge_ratios['Agentic DSS'] = converged_hr
+        
+        # --- Collect Decision Record for History ---
+        decision_record = {
+            'timestep': i + 1,
+            'date': str(market_view['date']) if 'date' in market_view.index else f"Day {i+1}",
+            'market_snapshot': {
+                # Core prices
+                'spot_close': float(market_view['spot_close']),
+                'fut_close': float(market_view['fut_close']),
+                # Predictions
+                'next_day_pred': float(market_view.get('next_day_pred', 0)),
+                'next_month_pred': float(market_view.get('next_month_pred', 0)),
+                # Volatility metrics
+                'spot_std_5': float(market_view.get('spot_std_5', 0)),
+                'spot_std_20': float(market_view.get('spot_std_20', 0)),
+                'fut_std_20': float(market_view.get('fut_std_20', 0)),
+                'vol_regime': int(market_view.get('vol_regime', 1)),
+                # Moving averages
+                'spot_ma_5': float(market_view.get('spot_ma_5', 0)),
+                'spot_ma_20': float(market_view.get('spot_ma_20', 0)),
+                'fut_ma_20': float(market_view.get('fut_ma_20', 0)),
+                # Basis analysis
+                'basis': float(market_view.get('basis', 0)),
+                'basis_pct': float(market_view.get('basis_pct', 0)),
+                'basis_mean_20': float(market_view.get('basis_mean_20', 0)),
+                # Returns
+                'spot_ret': float(market_view.get('spot_ret', 0)),
+                'fut_ret': float(market_view.get('fut_ret', 0)),
+            },
+            'agent_proposals': {
+                name: {'ratio': float(prop['ratio']), 'rationale': prop['rationale']}
+                for name, prop in agent_proposals.items()
+            },
+            'debate_history': [
+                {
+                    'round': round_data['round'],
+                    'cio_feedback': {
+                        'critique': round_data['cio_feedback'].get('critique', ''),
+                        'compromise_ratio': float(round_data['cio_feedback'].get('compromise_ratio', 0)),
+                        'questions': round_data['cio_feedback'].get('questions_for_agents', {})
+                    },
+                    'proposals_before': {
+                        name: {'ratio': float(p['ratio']), 'rationale': p['rationale']}
+                        for name, p in round_data.get('proposals_before_rebuttal', {}).items()
+                    },
+                    'proposals_after': {
+                        name: {'ratio': float(p['ratio']), 'rationale': p['rationale']}
+                        for name, p in round_data.get('proposals_after_rebuttal', {}).items()
+                    }
+                }
+                for round_data in (debate_history_for_step or [])
+            ],
+            'final_decision': {
+                'hedge_ratio': float(converged_hr),
+                'cio_rationale': cio_rationale
+            },
+            'performance': {
+                'pnl': float(pnl_agentic),
+                'cost': float(cost_agentic),
+                'net_pnl': float(pnl_agentic - cost_agentic)
+            }
+        }
+        decision_history.append(decision_record)
 
         # --- Evaluate Baselines ---
         # No Hedge
@@ -494,6 +585,23 @@ def main():
         simulation_results['Static (Ratio=1.0)']['hedge_ratios'].append(1.0)
         simulation_results['Static (Ratio=1.0)']['entropies'].append(0)
         current_hedge_ratios['Static (Ratio=1.0)'] = 1.0
+        
+        # --- Save Checkpoint After Each Timestep ---
+        checkpoint = {
+            'last_completed_timestep': i,
+            'simulation_results': simulation_results,
+            'current_hedge_ratios': current_hedge_ratios,
+            'decision_history': decision_history,
+            'timestamp': datetime.now().isoformat()
+        }
+        with open(checkpoint_path, 'w') as f:
+            json.dump(checkpoint, f, cls=NpEncoder)
+        
+        # Also save decision_history incrementally for webapp
+        with open(decision_history_path, 'w') as f:
+            json.dump(decision_history, f, indent=2, cls=NpEncoder)
+        
+        logger.info(f"💾 Checkpoint saved (timestep {i+1}/{eval_period_len})")
 
     # --- 4. Calculate and Print Metrics ---
     logger.info("\n--- Final CIO Rationale from last step ---")
@@ -550,6 +658,15 @@ def main():
     final_save_path = os.path.join(log_dir, f'simulation_results_{timestamp}.png')
     plt.savefig(final_save_path)
     logger.info(f"\n--- Simulation complete. Plot saved to {final_save_path} ---")
+    
+    # Final decision history save (already saved incrementally, but ensure final state)
+    logger.info(f"--- Decision history saved to {decision_history_path} ({len(decision_history)} records) ---")
+    
+    # Remove checkpoint file since simulation completed successfully
+    if os.path.exists(checkpoint_path):
+        os.remove(checkpoint_path)
+        logger.info("✅ Checkpoint file removed (simulation completed successfully)")
+    
     plt.show()
 
 if __name__ == "__main__":
