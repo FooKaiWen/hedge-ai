@@ -13,7 +13,7 @@ import json
 import time
 import os
 from datetime import datetime, timedelta
-from google import genai
+import google.generativeai as genai
 
 # === Configuration ===
 MODEL = "gemini-2.5-flash"
@@ -171,10 +171,10 @@ def get_llm_client():
     try:
         api_key = st.secrets.get("GOOGLE_API_KEY", os.environ.get("GOOGLE_API_KEY"))
         if not api_key:
-            # Fallback for demo - you should set your own key
-            api_key = "AIzaSyBwiRtCXpJZkk2BeP4LPgdHJHGr2hDY404"
-        client = genai.Client(api_key=api_key)
-        return client
+            st.warning("No API key found. Set GOOGLE_API_KEY in secrets or environment.")
+            return None
+        genai.configure(api_key=api_key)
+        return genai  # Return the module, not a client
     except Exception as e:
         st.error(f"Failed to initialize LLM: {e}")
         return None
@@ -216,7 +216,8 @@ def get_agent_proposal(client, agent_name: str, hedge_ratio: float, market_view:
     """
     
     try:
-        response = client.models.generate_content(model=MODEL, contents=prompt)
+        model = client.GenerativeModel(MODEL)
+        response = model.generate_content(prompt)
         time.sleep(0.5)
         rationale = response.text.strip().replace('\n', ' ')
     except Exception as e:
@@ -274,7 +275,8 @@ def moderate_debate(client, proposals: dict, market_view: dict, current_hedge: f
     """
     
     try:
-        response = client.models.generate_content(model=MODEL, contents=prompt)
+        model = client.GenerativeModel(MODEL)
+        response = model.generate_content(prompt)
         time.sleep(0.5)
         text = response.text.strip().replace("```json", "").replace("```", "")
         decision = json.loads(text)
