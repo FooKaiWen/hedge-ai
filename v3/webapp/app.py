@@ -221,6 +221,7 @@ def get_agent_proposal(client, agent_name: str, hedge_ratio: float, market_view:
         time.sleep(0.5)
         rationale = response.text.strip().replace('\n', ' ')
     except Exception as e:
+        st.warning(f"LLM Error for {agent_name}: {str(e)}")
         rationale = f"As the {agent_name} agent, I propose a hedge ratio of {hedge_ratio:.2f} based on current market conditions."
     
     return {"ratio": hedge_ratio, "rationale": rationale}
