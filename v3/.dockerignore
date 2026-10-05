@@ -1,0 +1,5 @@
+*
+!webapp/requirements.txt
+!webapp/app.py
+!data/palm_oil_enriched_data.csv
+!data/decision_history.json
